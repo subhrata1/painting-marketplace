@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artistry — Painting Marketplace</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">Artistry</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <h1>Discover Original Paintings</h1>
+    </div>
+    <div class="filters">
+      <input type="text" id="search" placeholder="Search title, artist...">
+      <select id="filterStyle"><option value="">All Styles</option></select>
+    </div>
+    <div class="grid" id="gallery"></div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const gallery = document.getElementById('gallery');
+    const searchInput = document.getElementById('search');
+    const styleSelect = document.getElementById('filterStyle');
+
+    async function loadStyles() {
+      try {
+        const data = await api('/paintings/meta/styles');
+        data.styles.forEach(s => {
+          styleSelect.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+      } catch {}
+    }
+
+    async function loadGallery() {
+      const params = new URLSearchParams();
+      if (searchInput.value) params.set('search', searchInput.value);
+      if (styleSelect.value) params.set('style', styleSelect.value);
+
+      try {
+        const data = await api('/paintings?' + params);
+        if (!data.paintings.length) {
+          gallery.innerHTML = '<div class="empty-state">No paintings found. Be the first to upload!</div>';
+          return;
+        }
+        gallery.innerHTML = data.paintings.map(paintingCard).join('');
+      } catch (err) {
+        gallery.innerHTML = `<div class="empty-state">Error loading paintings</div>`;
+      }
+    }
+
+    searchInput.addEventListener('input', debounce(loadGallery, 300));
+    styleSelect.addEventListener('change', loadGallery);
+
+    function debounce(fn, ms) {
+      let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+    }
+
+    loadStyles();
+    loadGallery();
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+node_modules/
+uploads/
+db/marketplace.db
+db/marketplace.db-wal
+db/marketplace.db-shm
+.env

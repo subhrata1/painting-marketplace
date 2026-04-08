@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artist Dashboard — Artistry</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">Artistry</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="dashboard" id="dashboard">
+    <div class="empty-state">Loading...</div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    async function load() {
+      const user = await loadUser();
+      if (!user || user.role !== 'artist') {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const dash = document.getElementById('dashboard');
+
+      // Load data in parallel
+      const [paintingsData, salesData] = await Promise.all([
+        api('/paintings/artist/mine'),
+        api('/payments/orders/sales'),
+      ]);
+
+      const paintings = paintingsData.paintings;
+      const sales = salesData.orders;
+
+      const totalRevenue = sales.reduce((s, o) => s + o.artist_payout_cents, 0);
+      const pendingShip = sales.filter(o => o.status === 'paid').length;
+
+      dash.innerHTML = `
+        <h1>Artist Dashboard</h1>
+        <p class="subtitle">Welcome back, ${esc(user.name)}</p>
+
+        ${!user.stripe_onboarded ? `
+          <div style="background:rgba(201,169,110,.1);border:1px solid var(--accent);border-radius:10px;padding:1.25rem;margin-bottom:2rem;">
+            <strong>Set up payments</strong> — Connect your Stripe account to receive payouts when your paintings sell.
+            <button class="btn btn-primary btn-sm" style="margin-left:1rem" id="connectBtn">Connect Stripe</button>
+          </div>` : ''}
+
+        <div class="stats">
+          <div class="stat-card">
+            <div class="label">Listed Paintings</div>
+            <div class="value">${paintings.filter(p => p.status === 'available').length}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Sold</div>
+            <div class="value">${paintings.filter(p => p.status === 'sold').length}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Total Revenue</div>
+            <div class="value" style="color:var(--success)">${formatPrice(totalRevenue)}</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Pending Shipment</div>
+            <div class="value" style="color:${pendingShip ? 'var(--danger)' : 'var(--text)'}">${pendingShip}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem">
+          <h3 class="section-title" style="margin:0">My Paintings</h3>
+          <a href="/upload.html" class="btn btn-primary btn-sm">+ Upload New</a>
+        </div>
+
+        <div class="grid" style="margin-top:1rem">
+          ${paintings.length ? paintings.map(p => `
+            <div class="card" onclick="location.href='/painting.html?id=${p.id}'">
+              <img src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
+              <div class="card-body">
+                <div class="card-title">${esc(p.title)}</div>
+                <div class="card-price">${formatPrice(p.price_cents)}</div>
+                <div class="card-meta">
+                  <span>${p.status}</span>
+                  ${p.style ? `<span>${esc(p.style)}</span>` : ''}
+                </div>
+              </div>
+            </div>
+          `).join('') : '<div class="empty-state">No paintings yet. Upload your first!</div>'}
+        </div>
+
+        ${sales.length ? `
+          <h3 class="section-title">Recent Sales</h3>
+          ${sales.map(o => `
+            <div class="order-row">
+              <img src="${o.image_path}" alt="">
+              <div class="order-info">
+                <div class="title">${esc(o.title)}</div>
+                <div class="meta">Buyer: ${esc(o.buyer_name)} &middot; Payout: ${formatPrice(o.artist_payout_cents)}</div>
+                ${o.shipping_name ? `<div class="meta">Ship to: ${esc(o.shipping_name)}, ${esc(o.shipping_city || '')}, ${esc(o.shipping_state || '')} ${esc(o.shipping_zip || '')}</div>` : ''}
+              </div>
+              <span class="order-status status-${o.status}">${o.status}</span>
+              ${o.status === 'paid' ? `<button class="btn btn-sm" onclick="event.stopPropagation();markShipped(${o.id})">Mark Shipped</button>` : ''}
+            </div>
+          `).join('')}` : ''}
+      `;
+
+      // Stripe connect button
+      const connectBtn = document.getElementById('connectBtn');
+      if (connectBtn) {
+        connectBtn.addEventListener('click', async () => {
+          try {
+            const r = await api('/payments/connect', { method: 'POST' });
+            window.location.href = r.url;
+          } catch (err) {
+            alert(err.message);
+          }
+        });
+      }
+    }
+
+    async function markShipped(orderId) {
+      const tracking = prompt('Enter tracking number (optional):');
+      try {
+        await api('/payments/orders/' + orderId + '/ship', {
+          method: 'PUT',
+          body: JSON.stringify({ tracking_number: tracking || '' }),
+        });
+        location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painting — Artistry</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">Artistry</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="painting-detail" id="detail">
+    <div class="empty-state">Loading...</div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const id = new URLSearchParams(location.search).get('id');
+    const detail = document.getElementById('detail');
+
+    async function load() {
+      await loadUser();
+      if (!id) { detail.innerHTML = '<div class="empty-state">Painting not found</div>'; return; }
+
+      try {
+        const data = await api('/paintings/' + id);
+        const p = data.painting;
+        document.title = p.title + ' — Artistry';
+
+        const isMine = currentUser && currentUser.id === p.artist_id;
+        const canBuy = currentUser && !isMine && p.status === 'available';
+
+        detail.innerHTML = `
+          <div><img src="${p.image_path}" alt="${esc(p.title)}"></div>
+          <div class="painting-info">
+            <h1>${esc(p.title)}</h1>
+            <div class="artist">by ${esc(p.artist_name)}</div>
+            <div class="price">${p.status === 'sold' ? '<span style="color:var(--danger)">SOLD</span>' : formatPrice(p.price_cents)}</div>
+            <div class="details">
+              ${p.style ? `<div>Style: ${esc(p.style)}</div>` : ''}
+              ${p.medium ? `<div>Medium: ${esc(p.medium)}</div>` : ''}
+              ${p.width_inches && p.height_inches ? `<div>Size: ${p.width_inches}" x ${p.height_inches}"</div>` : ''}
+              ${p.year_created ? `<div>Year: ${p.year_created}</div>` : ''}
+            </div>
+            ${p.description ? `<div class="description">${esc(p.description)}</div>` : ''}
+            ${canBuy ? `<button class="btn btn-primary" id="buyBtn">Purchase This Painting</button>
+              <p style="font-size:.78rem;color:var(--muted);margin-top:.75rem">
+                Shipping is handled directly by the artist. See <a href="/terms.html">Terms</a>.
+              </p>` : ''}
+            ${!currentUser && p.status === 'available' ? `<p><a href="/login.html" class="btn btn-primary">Log in to Purchase</a></p>` : ''}
+            ${isMine ? `<a href="/dashboard.html" class="btn">Manage in Dashboard</a>` : ''}
+          </div>`;
+
+        if (canBuy) {
+          document.getElementById('buyBtn').addEventListener('click', async () => {
+            try {
+              const r = await api('/payments/checkout/' + id, { method: 'POST' });
+              window.location.href = r.url;
+            } catch (err) {
+              alert(err.message);
+            }
+          });
+        }
+      } catch (err) {
+        detail.innerHTML = `<div class="empty-state">${err.message}</div>`;
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

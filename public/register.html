@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up — Artistry</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">Artistry</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="form-card">
+    <h2>Create an Account</h2>
+    <form id="registerForm">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="name" required>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" required>
+      </div>
+      <div class="form-group">
+        <label>Password (min 8 characters)</label>
+        <input type="password" name="password" minlength="8" required>
+      </div>
+      <div class="form-group">
+        <label>I want to...</label>
+        <select name="role">
+          <option value="buyer">Buy paintings</option>
+          <option value="artist">Sell my paintings</option>
+        </select>
+      </div>
+      <div id="error" class="form-error"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Sign Up</button>
+    </form>
+    <p style="text-align:center;margin-top:1rem;font-size:.88rem;color:var(--muted)">
+      Already have an account? <a href="/login.html">Log in</a>
+    </p>
+    <p style="text-align:center;margin-top:.5rem;font-size:.78rem;color:var(--muted)">
+      By signing up you agree to our <a href="/terms.html">Terms of Service</a>
+    </p>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const body = Object.fromEntries(fd);
+      try {
+        await api('/auth/register', { method: 'POST', body: JSON.stringify(body) });
+        window.location.href = body.role === 'artist' ? '/dashboard.html' : '/';
+      } catch (err) {
+        document.getElementById('error').textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>

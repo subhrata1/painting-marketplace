@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Painting — Artistry</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">Artistry</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="form-card" style="max-width:560px">
+    <h2>Upload a Painting</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" name="title" required>
+      </div>
+      <div class="form-group">
+        <label>Price (USD) *</label>
+        <input type="number" name="price" min="1" step="0.01" required placeholder="e.g. 250.00">
+      </div>
+      <div class="form-group">
+        <label>Image *</label>
+        <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required style="padding:.4rem">
+      </div>
+      <div class="form-group">
+        <label>Style</label>
+        <input type="text" name="style" placeholder="e.g. Impressionism, Abstract">
+      </div>
+      <div class="form-group">
+        <label>Medium</label>
+        <input type="text" name="medium" placeholder="e.g. Oil on canvas">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Width (inches)</label>
+          <input type="number" name="width_inches" step="0.1">
+        </div>
+        <div class="form-group">
+          <label>Height (inches)</label>
+          <input type="number" name="height_inches" step="0.1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Year Created</label>
+        <input type="text" name="year_created" placeholder="e.g. 2024">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" placeholder="Tell the story behind this painting..."></textarea>
+      </div>
+      <div id="error" class="form-error"></div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Upload Painting</button>
+    </form>
+    <p style="text-align:center;margin-top:1rem;font-size:.78rem;color:var(--muted)">
+      By uploading, you agree that you are responsible for shipping sold paintings.
+      The platform takes a 20% commission. See <a href="/terms.html">Terms</a>.
+    </p>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const user = await loadUser();
+      if (!user || user.role !== 'artist') {
+        window.location.href = '/login.html';
+      }
+    });
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      try {
+        const res = await fetch('/api/paintings', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        window.location.href = '/painting.html?id=' + data.id;
+      } catch (err) {
+        document.getElementById('error').textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>
