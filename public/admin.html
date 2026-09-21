@@ -261,10 +261,15 @@
     .lane-card {
       display: flex; align-items: center; gap: .6rem; padding: .4rem;
       background: var(--surface-2, rgba(255,255,255,.05)); border: 1px solid var(--border);
-      border-radius: 8px; cursor: grab; user-select: none;
+      border-radius: 8px; cursor: grab; user-select: none; touch-action: none;
     }
     .lane-card:active { cursor: grabbing; }
-    .lane-card.dragging { opacity: .4; }
+    .lane-card.dragging { opacity: .35; }
+    .lane-card-clone {
+      position: fixed; pointer-events: none; z-index: 9999; opacity: .95;
+      box-shadow: 0 12px 32px rgba(0,0,0,.5); transform: rotate(2deg);
+      cursor: grabbing;
+    }
     .lane-card img { width: 42px; height: 52px; object-fit: cover; border-radius: 4px; flex-shrink: 0; pointer-events: none; }
     .lane-card .lc-title { font-size: .8rem; line-height: 1.2; }
     .lane-card .lc-sold { font-size: .66rem; color: var(--danger); font-weight: 700; letter-spacing: .04em; }
@@ -661,8 +666,8 @@
 
         const laneCard = p => {
           const isSold = p.status === 'sold';
-          return `<div class="lane-card" draggable="true" data-id="${p.id}">
-            <img src="${p.image_path}" alt="${esc(p.title)}">
+          return `<div class="lane-card" data-id="${p.id}">
+            <img src="${p.image_path}" alt="${esc(p.title)}" draggable="false">
             <div><div class="lc-title">${esc(p.title)}</div>${isSold ? '<div class="lc-sold">SOLD</div>' : ''}</div>
           </div>`;
         };
@@ -714,31 +719,59 @@
       renderTab();
     }
 
+    // Pointer-based drag (works with mouse AND touch; more reliable than native HTML5 DnD)
     function wireSeriesBoard() {
-      const cards = document.querySelectorAll('.lane-card');
-      cards.forEach(card => {
-        card.addEventListener('dragstart', e => {
-          draggedId = Number(card.dataset.id);
-          card.classList.add('dragging');
-          e.dataTransfer.effectAllowed = 'move';
-          try { e.dataTransfer.setData('text/plain', String(draggedId)); } catch {}
-        });
-        card.addEventListener('dragend', () => {
-          draggedId = null;
-          card.classList.remove('dragging');
-        });
-      });
+      let dragCard = null, clone = null, dragId = null, hoverLane = null, offX = 0, offY = 0, started = false, startX = 0, startY = 0;
 
-      const lanes = document.querySelectorAll('.lane');
-      lanes.forEach(lane => {
-        lane.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; lane.classList.add('drag-over'); });
-        lane.addEventListener('dragleave', () => lane.classList.remove('drag-over'));
-        lane.addEventListener('drop', e => {
-          e.preventDefault();
-          lane.classList.remove('drag-over');
-          const id = draggedId != null ? draggedId : Number(e.dataTransfer.getData('text/plain'));
-          const targetSeries = laneList[Number(lane.dataset.lane)]; // null = Unassigned
-          saveSeries(id, targetSeries);
+      function moveClone(x, y) { clone.style.left = (x - offX) + 'px'; clone.style.top = (y - offY) + 'px'; }
+
+      function onMove(e) {
+        if (!dragCard) return;
+        if (!started) {
+          // ignore tiny movements so a plain click isn't treated as a drag
+          if (Math.abs(e.clientX - startX) < 4 && Math.abs(e.clientY - startY) < 4) return;
+          started = true;
+          const rect = dragCard.getBoundingClientRect();
+          offX = startX - rect.left; offY = startY - rect.top;
+          clone = dragCard.cloneNode(true);
+          clone.className = 'lane-card lane-card-clone';
+          clone.style.width = rect.width + 'px';
+          document.body.appendChild(clone);
+          dragCard.classList.add('dragging');
+          document.body.style.cursor = 'grabbing';
+        }
+        e.preventDefault();
+        moveClone(e.clientX, e.clientY);
+        const under = document.elementFromPoint(e.clientX, e.clientY);
+        const lane = under && under.closest ? under.closest('.lane') : null;
+        if (lane !== hoverLane) {
+          if (hoverLane) hoverLane.classList.remove('drag-over');
+          hoverLane = lane;
+          if (hoverLane) hoverLane.classList.add('drag-over');
+        }
+      }
+
+      function onUp() {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        document.body.style.cursor = '';
+        const targetLane = hoverLane;
+        if (hoverLane) hoverLane.classList.remove('drag-over');
+        if (clone) { clone.remove(); clone = null; }
+        if (dragCard) dragCard.classList.remove('dragging');
+        if (started && targetLane && dragId != null) {
+          saveSeries(dragId, laneList[Number(targetLane.dataset.lane)]); // null lane = Unassigned
+        }
+        dragCard = null; dragId = null; hoverLane = null; started = false;
+      }
+
+      document.querySelectorAll('.lane-card').forEach(card => {
+        card.addEventListener('pointerdown', e => {
+          if (e.button !== undefined && e.button !== 0) return; // primary button / touch only
+          dragCard = card; dragId = Number(card.dataset.id);
+          started = false; startX = e.clientX; startY = e.clientY;
+          window.addEventListener('pointermove', onMove);
+          window.addEventListener('pointerup', onUp);
         });
       });
     }
