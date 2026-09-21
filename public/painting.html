@@ -249,7 +249,7 @@
               <option value="">— None —</option>
               ${(function(){
                 var cur = (p.series || '').trim();
-                var opts = allSeries.slice();
+                var opts = mergeSeries(allSeries);
                 if (cur && opts.indexOf(cur) === -1) opts.push(cur);
                 return opts.map(function(s){ return '<option value="' + esc(s) + '"' + (s === cur ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('');
               })()}

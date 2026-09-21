@@ -11,6 +11,29 @@ async function api(path, opts = {}) {
   return data;
 }
 
+// ---- Series / Collections ----
+// Curated suggestions shown in the Series dropdown even before any painting uses them.
+// (Series is always optional — "— None —" remains the default.)
+const SUGGESTED_SERIES = [
+  'Gold and Black Series',
+  'Wild Majesty',
+  'The Divine Feminine',
+  'Irish Roots',
+  'Gilded Wings',
+];
+
+// Merge curated suggestions with the series already in use, de-duplicated (case-insensitive) and sorted.
+function mergeSeries(existing) {
+  const seen = new Map(); // lowercase -> display value (first-seen wins)
+  [...SUGGESTED_SERIES, ...(existing || [])].forEach(s => {
+    const name = (s || '').trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (!seen.has(key)) seen.set(key, name);
+  });
+  return [...seen.values()].sort((a, b) => a.localeCompare(b));
+}
+
 // ---- Auth state ----
 let currentUser = null;
 

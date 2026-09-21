@@ -119,12 +119,13 @@
         window.location.href = '/login.html';
       }
 
-      // Populate the series dropdown with existing collections
+      // Populate the series dropdown: curated suggestions + any existing collections
       try {
-        const data = await api('/paintings/meta/series');
+        let existing = [];
+        try { existing = (await api('/paintings/meta/series')).series || []; } catch {}
         const sel = document.getElementById('seriesSelect');
         const newOpt = sel.querySelector('option[value="__new__"]');
-        (data.series || []).forEach(s => {
+        mergeSeries(existing).forEach(s => {
           const opt = document.createElement('option');
           opt.value = s;
           opt.textContent = s;
