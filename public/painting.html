@@ -3,12 +3,103 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painting — Artistry</title>
+  <title>Painting — The Brush Collective</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .edit-form .form-group { margin-bottom: 1rem; }
+    .edit-form label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: .3rem; text-transform: uppercase; letter-spacing: .04em; }
+    .edit-form input, .edit-form textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: .55rem .8rem; border-radius: 8px; font-size: .9rem; font-family: inherit; outline: none; }
+    .edit-form input:focus, .edit-form textarea:focus { border-color: var(--accent); }
+    .edit-form textarea { resize: vertical; min-height: 80px; }
+    .currency-btn {
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+      padding: .35rem .75rem; border-radius: 6px; cursor: pointer; font-size: .8rem;
+      font-family: inherit; transition: all .2s;
+    }
+    .currency-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+    .currency-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,.1); }
+
+    /* ---- Reactions ---- */
+    .reactions {
+      display: flex; align-items: center; gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .reaction-btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      background: var(--surface-2); border: 1px solid var(--border);
+      color: var(--muted); padding: .5rem 1rem; border-radius: 8px;
+      cursor: pointer; font-size: .95rem; font-family: inherit; transition: all .2s;
+    }
+    .reaction-btn:hover { border-color: var(--accent); color: var(--text); }
+    .reaction-btn.active-like { border-color: #4caf50; color: #4caf50; background: rgba(76,175,80,.1); }
+    .reaction-btn.active-dislike { border-color: #ef5350; color: #ef5350; background: rgba(239,83,80,.1); }
+    .reaction-btn .count { font-size: .85rem; font-weight: 600; }
+
+    /* ---- Reviews ---- */
+    .reviews-section {
+      max-width: 900px; margin: 2rem auto; padding: 0 2rem;
+    }
+    .reviews-section h2 {
+      font-size: 1.2rem; font-weight: 300; margin-bottom: 1.5rem;
+    }
+    .reviews-section h2 span { color: var(--accent); }
+    .review-form {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;
+    }
+    .review-form h3 {
+      font-size: .9rem; font-weight: 400; margin-bottom: 1rem; color: var(--text);
+    }
+    .review-form input, .review-form textarea {
+      width: 100%; background: var(--bg); color: var(--text);
+      border: 1px solid var(--border); padding: .6rem .8rem;
+      border-radius: 8px; font-size: .88rem; font-family: inherit; outline: none;
+      margin-bottom: .75rem;
+    }
+    .review-form input:focus, .review-form textarea:focus { border-color: var(--accent); }
+    .review-form textarea { resize: vertical; min-height: 80px; }
+    .review-form .rating-select {
+      display: flex; gap: .5rem; margin-bottom: 1rem;
+    }
+    .review-form .rating-btn {
+      padding: .4rem .9rem; border-radius: 6px; cursor: pointer;
+      font-size: .85rem; font-family: inherit; transition: all .2s;
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+    }
+    .review-form .rating-btn:hover { border-color: var(--accent); color: var(--text); }
+    .review-form .rating-btn.sel-like { border-color: #4caf50; color: #4caf50; background: rgba(76,175,80,.1); }
+    .review-form .rating-btn.sel-dislike { border-color: #ef5350; color: #ef5350; background: rgba(239,83,80,.1); }
+    .review-list { display: flex; flex-direction: column; gap: 1rem; }
+    .review-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.2rem;
+    }
+    .review-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: .6rem;
+    }
+    .review-name {
+      font-weight: 500; font-size: .9rem; color: var(--text);
+    }
+    .review-date { font-size: .75rem; color: var(--muted); }
+    .review-rating { font-size: .85rem; margin-bottom: .4rem; }
+    .review-text {
+      font-size: .88rem; color: var(--muted); line-height: 1.7;
+    }
+    .review-delete {
+      background: none; border: none; color: var(--danger); cursor: pointer;
+      font-size: .75rem; padding: .2rem .5rem; opacity: .6;
+    }
+    .review-delete:hover { opacity: 1; }
+    .no-reviews {
+      text-align: center; color: var(--muted); padding: 1.5rem;
+      font-style: italic; font-size: .9rem;
+    }
+  </style>
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-brand">Artistry</a>
+    <a href="/" class="nav-brand">The Brush Collective</a>
     <div class="nav-links" id="nav-links"></div>
   </nav>
 
@@ -16,10 +107,27 @@
     <div class="empty-state">Loading...</div>
   </div>
 
+  <div class="reviews-section" id="reviewsSection" style="display:none">
+    <h2>Reviews &amp; <span>Feedback</span></h2>
+    <div class="review-form" id="reviewForm">
+      <h3>Leave a Review</h3>
+      <input type="text" id="reviewName" placeholder="Your name (optional)" maxlength="50">
+      <div class="rating-select">
+        <button type="button" class="rating-btn" data-rating="1" id="ratingLike">&#128077; Loved it</button>
+        <button type="button" class="rating-btn" data-rating="-1" id="ratingDislike">&#128078; Not for me</button>
+      </div>
+      <textarea id="reviewText" placeholder="Share your thoughts about this piece..." maxlength="500"></textarea>
+      <div id="reviewError" class="form-error" style="margin-bottom:.5rem;"></div>
+      <button class="btn btn-primary" id="submitReview">Post Review</button>
+    </div>
+    <div class="review-list" id="reviewList"></div>
+  </div>
+
   <script src="/js/app.js"></script>
   <script>
     const id = new URLSearchParams(location.search).get('id');
     const detail = document.getElementById('detail');
+    let paintingData = null;
 
     async function load() {
       await loadUser();
@@ -27,47 +135,381 @@
 
       try {
         const data = await api('/paintings/' + id);
-        const p = data.painting;
-        document.title = p.title + ' — Artistry';
-
-        const isMine = currentUser && currentUser.id === p.artist_id;
-        const canBuy = currentUser && !isMine && p.status === 'available';
-
-        detail.innerHTML = `
-          <div><img src="${p.image_path}" alt="${esc(p.title)}"></div>
-          <div class="painting-info">
-            <h1>${esc(p.title)}</h1>
-            <div class="artist">by ${esc(p.artist_name)}</div>
-            <div class="price">${p.status === 'sold' ? '<span style="color:var(--danger)">SOLD</span>' : formatPrice(p.price_cents)}</div>
-            <div class="details">
-              ${p.style ? `<div>Style: ${esc(p.style)}</div>` : ''}
-              ${p.medium ? `<div>Medium: ${esc(p.medium)}</div>` : ''}
-              ${p.width_inches && p.height_inches ? `<div>Size: ${p.width_inches}" x ${p.height_inches}"</div>` : ''}
-              ${p.year_created ? `<div>Year: ${p.year_created}</div>` : ''}
-            </div>
-            ${p.description ? `<div class="description">${esc(p.description)}</div>` : ''}
-            ${canBuy ? `<button class="btn btn-primary" id="buyBtn">Purchase This Painting</button>
-              <p style="font-size:.78rem;color:var(--muted);margin-top:.75rem">
-                Shipping is handled directly by the artist. See <a href="/terms.html">Terms</a>.
-              </p>` : ''}
-            ${!currentUser && p.status === 'available' ? `<p><a href="/login.html" class="btn btn-primary">Log in to Purchase</a></p>` : ''}
-            ${isMine ? `<a href="/dashboard.html" class="btn">Manage in Dashboard</a>` : ''}
-          </div>`;
-
-        if (canBuy) {
-          document.getElementById('buyBtn').addEventListener('click', async () => {
-            try {
-              const r = await api('/payments/checkout/' + id, { method: 'POST' });
-              window.location.href = r.url;
-            } catch (err) {
-              alert(err.message);
-            }
-          });
-        }
+        paintingData = data.painting;
+        renderView();
       } catch (err) {
-        detail.innerHTML = `<div class="empty-state">${err.message}</div>`;
+        detail.innerHTML = '<div class="empty-state">' + err.message + '</div>';
       }
     }
+
+    function renderView() {
+      const p = paintingData;
+      document.title = p.title + ' \u2014 The Brush Collective';
+
+      const isMine = currentUser && currentUser.id === p.artist_id;
+      const isAdmin = currentUser && currentUser.role === 'admin';
+      const canEdit = isMine || isAdmin;
+      const canBuy = currentUser && !isMine && p.status === 'available';
+
+      detail.innerHTML = `
+        <div><img src="${p.image_path}" alt="${esc(p.title)}"></div>
+        <div class="painting-info">
+          <h1>${esc(p.title)}</h1>
+          <div class="artist">by <a href="/artist.html?id=${p.artist_id}" style="color:var(--accent);text-decoration:none">${esc(p.artist_name)}</a></div>
+          <div class="price">${p.status === 'sold' ? '<span style="color:var(--danger)">SOLD</span>' : formatPrice(p.price_cents, p.currency)}</div>
+          <div class="details">
+            ${p.style ? '<div>Style: ' + esc(p.style) + '</div>' : ''}
+            ${p.medium ? '<div>Medium: ' + esc(p.medium) + '</div>' : ''}
+            ${p.width_inches && p.height_inches ? '<div>Size: ' + p.width_inches + '" x ' + p.height_inches + '"</div>' : ''}
+            ${p.year_created ? '<div>Year: ' + p.year_created + '</div>' : ''}
+          </div>
+          ${p.description ? '<div class="description">' + esc(p.description) + '</div>' : ''}
+          ${canBuy ? '<button class="btn btn-primary" id="buyBtn">Purchase This Painting</button><p style="font-size:.78rem;color:var(--muted);margin-top:.75rem">Shipping is handled directly by the artist. See <a href="/terms.html">Terms</a>.</p>' : ''}
+          ${!currentUser && p.status === 'available' ? '<p style="margin-top:1rem"><a href="/register.html?role=buyer" class="btn btn-primary">Sign Up to Purchase</a><span style="font-size:.82rem;color:var(--muted);margin-left:.75rem">or <a href="/login.html" style="color:var(--accent)">Log in</a></span></p>' : ''}
+          <div class="reactions" id="reactionsContainer"></div>
+          ${canEdit ? '<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;"><button class="btn btn-primary" id="editBtn">Edit Painting</button>' + (isMine ? '<a href="/dashboard.html" class="btn">Dashboard</a>' : '') + '<button class="btn btn-danger" id="deleteBtn">Delete' + (!isMine ? ' (Admin)' : '') + '</button></div>' : ''}
+        </div>`;
+
+      // Buy button
+      if (canBuy) {
+        document.getElementById('buyBtn').addEventListener('click', async function() {
+          try {
+            var r = await api('/payments/checkout/' + id, { method: 'POST' });
+            window.location.href = r.url;
+          } catch (err) { alert(err.message); }
+        });
+      }
+
+      // Delete button
+      var deleteBtn = document.getElementById('deleteBtn');
+      if (deleteBtn) {
+        deleteBtn.addEventListener('click', async function() {
+          if (!confirm('Delete this painting? It will be removed from the gallery.')) return;
+          try {
+            await api('/paintings/' + id, { method: 'DELETE' });
+            alert('Painting deleted.');
+            window.location.href = currentUser.role === 'admin' ? '/admin.html' : '/dashboard.html';
+          } catch (err) { alert(err.message); }
+        });
+      }
+
+      // Edit button
+      var editBtn = document.getElementById('editBtn');
+      if (editBtn) {
+        editBtn.addEventListener('click', function() { renderEditForm(); });
+      }
+
+      // Load reactions and reviews
+      loadReactions();
+      loadReviews();
+    }
+
+    function renderEditForm() {
+      var p = paintingData;
+      var priceVal = p.price_cents ? (p.price_cents / 100).toFixed(2) : '';
+      var curr = p.currency || 'USD';
+      var st = p.status || 'available';
+
+      detail.innerHTML = `
+        <div><img src="${p.image_path}" alt="${esc(p.title)}"></div>
+        <div class="painting-info edit-form">
+          <h1 style="margin-bottom:1rem;font-size:1.3rem;">Edit Painting</h1>
+          <div class="form-group">
+            <label>Title</label>
+            <input type="text" id="editTitle" value="${esc(p.title || '')}">
+          </div>
+          <div class="form-group">
+            <label>Price</label>
+            <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+              <button type="button" class="currency-btn ${curr === 'USD' ? 'active' : ''}" data-currency="USD">$ USD</button>
+              <button type="button" class="currency-btn ${curr === 'EUR' ? 'active' : ''}" data-currency="EUR">&euro; EUR</button>
+              <button type="button" class="currency-btn ${curr === 'GBP' ? 'active' : ''}" data-currency="GBP">&pound; GBP</button>
+            </div>
+            <input type="text" inputmode="decimal" id="editPrice" value="${priceVal}" placeholder="e.g. 250.00">
+            <input type="hidden" id="editCurrency" value="${curr}">
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <div style="display:flex;gap:.5rem;">
+              <button type="button" class="currency-btn ${st === 'available' ? 'active' : ''}" data-listing="available">Available</button>
+              <button type="button" class="currency-btn ${st === 'sold' ? 'active' : ''}" data-listing="sold">Sold</button>
+            </div>
+            <input type="hidden" id="editStatus" value="${st}">
+          </div>
+          <div class="form-group">
+            <label>Style</label>
+            <input type="text" id="editStyle" value="${esc(p.style || '')}" placeholder="e.g. Impressionism">
+          </div>
+          <div class="form-group">
+            <label>Medium</label>
+            <input type="text" id="editMedium" value="${esc(p.medium || '')}" placeholder="e.g. Oil on canvas">
+          </div>
+          <div class="form-group">
+            <label>Dimensions</label>
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
+              <span id="unitLabel" style="font-size:.82rem;color:var(--accent);">cm</span>
+              <button type="button" id="unitToggle" style="position:relative;width:48px;height:26px;border-radius:13px;border:1px solid var(--border);background:var(--surface-2);cursor:pointer;padding:0;transition:all .25s;">
+                <span id="unitKnob" style="position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--accent);transition:transform .25s;"></span>
+              </button>
+              <span id="unitLabelAlt" style="font-size:.82rem;color:var(--muted);opacity:.4;">inches</span>
+            </div>
+            <div style="display:flex;gap:1rem;">
+              <div style="flex:1">
+                <input type="text" inputmode="decimal" id="editWidth" value="${p.width_inches ? (p.width_inches * 2.54).toFixed(1) : ''}" placeholder="Width">
+              </div>
+              <div style="flex:1">
+                <input type="text" inputmode="decimal" id="editHeight" value="${p.height_inches ? (p.height_inches * 2.54).toFixed(1) : ''}" placeholder="Height">
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Year Created</label>
+            <input type="text" id="editYear" value="${esc(p.year_created || '')}" placeholder="e.g. 2024">
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="editDesc" placeholder="Tell the story behind this painting...">${esc(p.description || '')}</textarea>
+          </div>
+          <div id="editError" class="form-error" style="margin-bottom:.5rem;"></div>
+          <div style="display:flex;gap:.75rem;">
+            <button class="btn btn-primary" id="saveBtn" style="flex:1;justify-content:center">Save Changes</button>
+            <button class="btn" id="cancelEditBtn" style="justify-content:center">Cancel</button>
+          </div>
+        </div>`;
+
+      // Currency toggle
+      document.querySelectorAll('[data-currency]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('[data-currency]').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          document.getElementById('editCurrency').value = btn.dataset.currency;
+        });
+      });
+
+      // Status toggle
+      document.querySelectorAll('[data-listing]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('[data-listing]').forEach(function(b) { b.classList.remove('active'); });
+          btn.classList.add('active');
+          document.getElementById('editStatus').value = btn.dataset.listing;
+        });
+      });
+
+      // Unit toggle (cm ↔ inches)
+      var editUnitIsCm = true;
+      var CM_PER_INCH = 2.54;
+      var unitToggle = document.getElementById('unitToggle');
+      var unitKnob = document.getElementById('unitKnob');
+      var unitLabel = document.getElementById('unitLabel');
+      var unitLabelAlt = document.getElementById('unitLabelAlt');
+
+      unitToggle.addEventListener('click', function() {
+        var w = parseFloat(document.getElementById('editWidth').value) || 0;
+        var h = parseFloat(document.getElementById('editHeight').value) || 0;
+        editUnitIsCm = !editUnitIsCm;
+        if (editUnitIsCm) {
+          unitKnob.style.transform = 'translateX(0)';
+          unitToggle.style.background = 'var(--surface-2)';
+          unitLabel.style.opacity = '1'; unitLabel.style.color = 'var(--accent)';
+          unitLabelAlt.style.opacity = '.4'; unitLabelAlt.style.color = 'var(--muted)';
+          if (w) document.getElementById('editWidth').value = (w * CM_PER_INCH).toFixed(1);
+          if (h) document.getElementById('editHeight').value = (h * CM_PER_INCH).toFixed(1);
+        } else {
+          unitKnob.style.transform = 'translateX(22px)';
+          unitToggle.style.background = 'var(--accent-dim)';
+          unitLabelAlt.style.opacity = '1'; unitLabelAlt.style.color = 'var(--accent)';
+          unitLabel.style.opacity = '.4'; unitLabel.style.color = 'var(--muted)';
+          if (w) document.getElementById('editWidth').value = (w / CM_PER_INCH).toFixed(1);
+          if (h) document.getElementById('editHeight').value = (h / CM_PER_INCH).toFixed(1);
+        }
+      });
+
+      // Cancel
+      document.getElementById('cancelEditBtn').addEventListener('click', function() {
+        renderView();
+      });
+
+      // Save
+      document.getElementById('saveBtn').addEventListener('click', async function() {
+        var errEl = document.getElementById('editError');
+        errEl.textContent = '';
+
+        var title = document.getElementById('editTitle').value.trim();
+        var price = document.getElementById('editPrice').value.trim();
+
+        if (!title) { errEl.textContent = 'Title is required'; return; }
+        if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+          errEl.textContent = 'Please enter a valid price'; return;
+        }
+
+        // Convert cm to inches if needed (backend stores inches)
+        var widthVal = document.getElementById('editWidth').value.trim();
+        var heightVal = document.getElementById('editHeight').value.trim();
+        if (editUnitIsCm) {
+          if (widthVal) widthVal = (parseFloat(widthVal) / CM_PER_INCH).toFixed(2);
+          if (heightVal) heightVal = (parseFloat(heightVal) / CM_PER_INCH).toFixed(2);
+        }
+
+        var body = {
+          title: title,
+          price: price,
+          currency: document.getElementById('editCurrency').value,
+          status: document.getElementById('editStatus').value,
+          style: document.getElementById('editStyle').value.trim(),
+          medium: document.getElementById('editMedium').value.trim(),
+          width_inches: widthVal || null,
+          height_inches: heightVal || null,
+          year_created: document.getElementById('editYear').value.trim(),
+          description: document.getElementById('editDesc').value.trim()
+        };
+
+        try {
+          document.getElementById('saveBtn').textContent = 'Saving...';
+          document.getElementById('saveBtn').disabled = true;
+          await api('/paintings/' + id, {
+            method: 'PUT',
+            body: JSON.stringify(body)
+          });
+          // Reload painting data and switch back to view mode
+          var data = await api('/paintings/' + id);
+          paintingData = data.painting;
+          renderView();
+        } catch (err) {
+          errEl.textContent = err.message;
+          document.getElementById('saveBtn').textContent = 'Save Changes';
+          document.getElementById('saveBtn').disabled = false;
+        }
+      });
+    }
+
+    // ---- Fingerprint for anonymous reactions ----
+    function getFingerprint() {
+      var fp = localStorage.getItem('tbc_fp');
+      if (!fp) {
+        fp = 'fp_' + Math.random().toString(36).substr(2, 12) + Date.now().toString(36);
+        localStorage.setItem('tbc_fp', fp);
+      }
+      return fp;
+    }
+
+    // ---- Reactions ----
+    async function loadReactions() {
+      if (!id) return;
+      try {
+        var fp = getFingerprint();
+        var data = await api('/paintings/' + id + '/reactions?fp=' + encodeURIComponent(fp));
+        renderReactions(data);
+      } catch (e) { console.error('Reactions error:', e); }
+    }
+
+    function renderReactions(data) {
+      var container = document.getElementById('reactionsContainer');
+      if (!container) return;
+      var likeClass = data.userReaction === 'like' ? ' active-like' : '';
+      var dislikeClass = data.userReaction === 'dislike' ? ' active-dislike' : '';
+      container.innerHTML =
+        '<button class="reaction-btn' + likeClass + '" id="likeBtn">&#128077; <span class="count">' + data.likes + '</span></button>' +
+        '<button class="reaction-btn' + dislikeClass + '" id="dislikeBtn">&#128078; <span class="count">' + data.dislikes + '</span></button>';
+
+      document.getElementById('likeBtn').addEventListener('click', function() { toggleReaction('like'); });
+      document.getElementById('dislikeBtn').addEventListener('click', function() { toggleReaction('dislike'); });
+    }
+
+    async function toggleReaction(type) {
+      try {
+        var data = await api('/paintings/' + id + '/reactions', {
+          method: 'POST',
+          body: JSON.stringify({ type: type, fingerprint: getFingerprint() })
+        });
+        renderReactions(data);
+      } catch (e) { console.error('Reaction error:', e); }
+    }
+
+    // ---- Reviews ----
+    async function loadReviews() {
+      if (!id) return;
+      document.getElementById('reviewsSection').style.display = '';
+      try {
+        var data = await api('/paintings/' + id + '/reviews');
+        var list = document.getElementById('reviewList');
+        if (!data.reviews.length) {
+          list.innerHTML = '<div class="no-reviews">No reviews yet. Be the first to share your thoughts!</div>';
+          return;
+        }
+        var isAdmin = currentUser && currentUser.role === 'admin';
+        list.innerHTML = data.reviews.map(function(r) {
+          var ratingIcon = r.rating === 1 ? '&#128077;' : r.rating === -1 ? '&#128078;' : '';
+          var date = new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+          return '<div class="review-card">' +
+            '<div class="review-header">' +
+              '<span class="review-name">' + esc(r.name) + '</span>' +
+              '<span style="display:flex;align-items:center;gap:.5rem;">' +
+                '<span class="review-date">' + date + '</span>' +
+                (isAdmin ? '<button class="review-delete" data-id="' + r.id + '">Delete</button>' : '') +
+              '</span>' +
+            '</div>' +
+            (ratingIcon ? '<div class="review-rating">' + ratingIcon + '</div>' : '') +
+            '<div class="review-text">' + esc(r.text) + '</div>' +
+          '</div>';
+        }).join('');
+
+        // Admin delete handlers
+        if (isAdmin) {
+          list.querySelectorAll('.review-delete').forEach(function(btn) {
+            btn.addEventListener('click', async function() {
+              if (!confirm('Delete this review?')) return;
+              try {
+                await api('/paintings/' + id + '/reviews/' + btn.dataset.id, { method: 'DELETE' });
+                loadReviews();
+              } catch (e) { alert(e.message); }
+            });
+          });
+        }
+      } catch (e) { console.error('Reviews error:', e); }
+    }
+
+    // Review form
+    var selectedRating = 0;
+    document.getElementById('ratingLike').addEventListener('click', function() {
+      selectedRating = selectedRating === 1 ? 0 : 1;
+      this.classList.toggle('sel-like', selectedRating === 1);
+      document.getElementById('ratingDislike').classList.remove('sel-dislike');
+    });
+    document.getElementById('ratingDislike').addEventListener('click', function() {
+      selectedRating = selectedRating === -1 ? 0 : -1;
+      this.classList.toggle('sel-dislike', selectedRating === -1);
+      document.getElementById('ratingLike').classList.remove('sel-like');
+    });
+
+    document.getElementById('submitReview').addEventListener('click', async function() {
+      var errEl = document.getElementById('reviewError');
+      errEl.textContent = '';
+      var text = document.getElementById('reviewText').value.trim();
+      if (!text) { errEl.textContent = 'Please write something'; return; }
+
+      var btn = this;
+      btn.textContent = 'Posting...'; btn.disabled = true;
+      try {
+        await api('/paintings/' + id + '/reviews', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: document.getElementById('reviewName').value.trim(),
+            text: text,
+            rating: selectedRating
+          })
+        });
+        document.getElementById('reviewText').value = '';
+        document.getElementById('reviewName').value = '';
+        selectedRating = 0;
+        document.getElementById('ratingLike').classList.remove('sel-like');
+        document.getElementById('ratingDislike').classList.remove('sel-dislike');
+        loadReviews();
+      } catch (e) {
+        errEl.textContent = e.message;
+      }
+      btn.textContent = 'Post Review'; btn.disabled = false;
+    });
+
     load();
   </script>
 </body>

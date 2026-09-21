@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery — The Brush Collective</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      background:
+        radial-gradient(ellipse 70% 50% at 10% 20%, rgba(201,169,110,.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 60% at 90% 80%, rgba(180,130,70,.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 50% 50%, rgba(30,20,15,.95) 0%, transparent 100%),
+        var(--bg);
+    }
+    .gallery-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 2rem 4rem;
+    }
+    .gallery-page-header {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+      position: relative;
+    }
+    .gallery-page-header::after {
+      content: '';
+      display: block;
+      width: 60px; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      margin: 1.5rem auto 0;
+    }
+    .gallery-page-header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 200;
+      margin-bottom: .5rem;
+    }
+    .gallery-page-header h1 span { color: var(--accent); font-weight: 400; }
+    .gallery-page-header p {
+      color: var(--muted); font-size: .92rem; max-width: 500px; margin: 0 auto;
+    }
+
+    /* Filters bar */
+    .gallery-filters {
+      display: flex; gap: .75rem; align-items: center; flex-wrap: wrap;
+      margin-bottom: 2rem; padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .gallery-filters input[type="text"] {
+      width: 220px; font-size: .82rem;
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.2);
+      color: #fff;
+    }
+    .gallery-filters input[type="text"]:focus {
+      border-color: var(--accent);
+      background: rgba(255,255,255,.12);
+    }
+    .gallery-filters select {
+      min-width: 140px; font-size: .82rem;
+      background: rgba(255,255,255,.08);
+      border-color: rgba(255,255,255,.2);
+      color: #fff;
+    }
+    .gallery-tabs {
+      display: flex; gap: .5rem; margin-bottom: 2rem;
+    }
+    .gallery-tab-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--muted); padding: .5rem 1.2rem; border-radius: 6px;
+      font-size: .82rem; font-family: inherit; cursor: pointer;
+      transition: all .2s;
+    }
+    .gallery-tab-btn:hover { border-color: var(--accent); color: var(--text); }
+    .gallery-tab-btn.active {
+      border-color: var(--accent); color: var(--accent);
+      background: rgba(201,169,110,.1);
+    }
+    .gallery-tab-btn .count {
+      font-size: .72rem; opacity: .7; margin-left: .3rem;
+    }
+
+    /* Painting grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+    .gallery-item {
+      cursor: pointer;
+      transition: transform .3s ease, box-shadow .3s ease;
+      border-radius: 10px;
+      overflow: hidden;
+      background: linear-gradient(160deg, rgba(201,169,110,.05) 0%, rgba(30,30,30,.8) 100%);
+      border: 1px solid rgba(201,169,110,.1);
+    }
+    .gallery-item:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 12px 40px rgba(201,169,110,.12);
+      border-color: rgba(201,169,110,.3);
+    }
+    .gallery-item-img {
+      width: 100%;
+      aspect-ratio: 4/5;
+      object-fit: cover;
+      display: block;
+    }
+    .gallery-item-info {
+      padding: 1rem 1.2rem;
+    }
+    .gallery-item-artist {
+      font-size: .78rem;
+      color: var(--accent);
+      font-style: italic;
+      margin-bottom: .2rem;
+    }
+    .gallery-item-title {
+      font-size: .92rem;
+      font-weight: 500;
+      margin-bottom: .3rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .gallery-item-price {
+      font-size: .88rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .gallery-item-status {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      padding: .2rem .6rem;
+      border-radius: 4px;
+      margin-top: .4rem;
+    }
+    .gallery-item-status.sold {
+      background: rgba(192,57,43,.15);
+      color: var(--danger);
+    }
+    .gallery-item-sold-overlay {
+      position: relative;
+    }
+    .gallery-item-sold-overlay::after {
+      content: 'SOLD';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,.65);
+      color: #fff;
+      font-size: .75rem;
+      font-weight: 800;
+      letter-spacing: .15em;
+      padding: .5rem 1.5rem;
+      border-radius: 4px;
+      backdrop-filter: blur(2px);
+    }
+
+    .gallery-empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+      font-style: italic;
+      grid-column: 1 / -1;
+    }
+
+    @media (max-width: 600px) {
+      .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+      .gallery-page { padding: 1rem 1rem 3rem; }
+      .gallery-item-img { aspect-ratio: 3/4; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">The Brush Collective</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="gallery-page">
+    <a href="/" class="back-link">&larr; Home</a>
+
+    <div class="gallery-page-header">
+      <h1>The <span>Collection</span></h1>
+      <p>A selection of original works from our gallery artists</p>
+    </div>
+
+    <div class="gallery-filters">
+      <input type="text" id="searchInput" placeholder="Search by title or artist...">
+      <select id="artistFilter"><option value="">All Artists</option></select>
+      <select id="styleFilter"><option value="">All Styles</option></select>
+    </div>
+
+    <div class="gallery-tabs">
+      <button class="gallery-tab-btn active" data-status="">All <span class="count" id="countAll">0</span></button>
+      <button class="gallery-tab-btn" data-status="available">Available <span class="count" id="countAvail">0</span></button>
+      <button class="gallery-tab-btn" data-status="sold">Sold <span class="count" id="countSold">0</span></button>
+    </div>
+
+    <div class="gallery-grid" id="galleryGrid"></div>
+  </div>
+
+  <footer style="border-top:1px solid var(--border);padding:1.5rem 2rem;text-align:center;color:var(--muted);font-size:.8rem;">
+    <p>The Brush Collective &mdash; Where every brushstroke finds its buyer</p>
+  </footer>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const grid = document.getElementById('galleryGrid');
+    const searchInput = document.getElementById('searchInput');
+    const artistFilter = document.getElementById('artistFilter');
+    const styleFilter = document.getElementById('styleFilter');
+    let activeStatus = '';
+
+    // Tab buttons
+    document.querySelectorAll('.gallery-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.gallery-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeStatus = btn.dataset.status;
+        loadPaintings();
+      });
+    });
+
+    // Load artists for filter
+    async function loadArtists() {
+      try {
+        const data = await api('/auth/public/artists');
+        data.artists.forEach(a => {
+          artistFilter.innerHTML += `<option value="${a.id}">${a.name}</option>`;
+        });
+      } catch {}
+    }
+
+    // Load styles for filter
+    async function loadStyles() {
+      try {
+        const data = await api('/paintings/meta/styles');
+        data.styles.forEach(s => {
+          styleFilter.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+      } catch {}
+    }
+
+    // Load paintings
+    async function loadPaintings() {
+      const params = new URLSearchParams();
+      if (searchInput.value.trim()) params.set('search', searchInput.value.trim());
+      if (artistFilter.value) params.set('artist_id', artistFilter.value);
+      if (styleFilter.value) params.set('style', styleFilter.value);
+      if (activeStatus) params.set('status', activeStatus);
+
+      try {
+        const data = await api('/paintings?' + params);
+        const avail = data.availableCount || 0;
+        const sold = data.soldCount || 0;
+
+        document.getElementById('countAll').textContent = avail + sold;
+        document.getElementById('countAvail').textContent = avail;
+        document.getElementById('countSold').textContent = sold;
+
+        if (!data.paintings.length) {
+          grid.innerHTML = '<div class="gallery-empty">No paintings found.</div>';
+          return;
+        }
+
+        grid.innerHTML = data.paintings.map(p => {
+          const price = formatPrice(p.price_cents, p.currency);
+          const isSold = p.status === 'sold';
+          return `
+            <div class="gallery-item" onclick="location.href='/painting.html?id=${p.id}'">
+              <div ${isSold ? 'class="gallery-item-sold-overlay"' : ''}>
+                <img class="gallery-item-img" src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
+              </div>
+              <div class="gallery-item-info">
+                <div class="gallery-item-artist">${esc(p.artist_name || '')}</div>
+                <div class="gallery-item-title">${esc(p.title)}</div>
+                <div class="gallery-item-price">${isSold ? '<span class="gallery-item-status sold">Sold</span>' : price}</div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        grid.innerHTML = '<div class="gallery-empty">Error loading paintings.</div>';
+      }
+    }
+
+    // Debounce search
+    let searchTimeout;
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(loadPaintings, 300);
+    });
+    artistFilter.addEventListener('change', loadPaintings);
+    styleFilter.addEventListener('change', loadPaintings);
+
+    loadArtists();
+    loadStyles();
+    loadPaintings();
+  </script>
+</body>
+</html>

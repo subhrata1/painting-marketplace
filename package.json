@@ -9,6 +9,7 @@
     "db:init": "node db/init.js"
   },
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.7.0",
     "cookie-parser": "^1.4.7",
@@ -17,6 +18,10 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^1.4.5-lts.1",
+    "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.5",
+    "nsfwjs": "^4.3.0",
+    "resend": "^6.11.0",
     "stripe": "^17.5.0"
   }
 }

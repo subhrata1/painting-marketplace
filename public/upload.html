@@ -3,29 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Painting — Artistry</title>
+  <title>Upload Painting — The Brush Collective</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .currency-btn {
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+      padding: .4rem .9rem; border-radius: 6px; cursor: pointer; font-size: .82rem;
+      font-family: inherit; transition: all .2s;
+    }
+    .currency-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+    .currency-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,.1); }
+  </style>
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-brand">Artistry</a>
+    <a href="/" class="nav-brand">The Brush Collective</a>
     <div class="nav-links" id="nav-links"></div>
   </nav>
 
   <div class="form-card" style="max-width:560px">
     <h2>Upload a Painting</h2>
-    <form id="uploadForm" enctype="multipart/form-data">
+    <form id="uploadForm" enctype="multipart/form-data" novalidate>
       <div class="form-group">
         <label>Title *</label>
-        <input type="text" name="title" required>
+        <input type="text" name="title">
       </div>
       <div class="form-group">
-        <label>Price (USD) *</label>
-        <input type="number" name="price" min="1" step="0.01" required placeholder="e.g. 250.00">
+        <label>Price *</label>
+        <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+          <button type="button" class="currency-btn active" data-currency="USD">$ USD</button>
+          <button type="button" class="currency-btn" data-currency="EUR">&#8364; EUR</button>
+          <button type="button" class="currency-btn" data-currency="GBP">&#163; GBP</button>
+        </div>
+        <input type="text" inputmode="decimal" name="price" placeholder="e.g. 250.00">
+        <input type="hidden" name="currency" id="currencyInput" value="USD">
+      </div>
+      <div class="form-group">
+        <label>Listing Status</label>
+        <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+          <button type="button" class="currency-btn active" data-listing="available">Available for Sale</button>
+          <button type="button" class="currency-btn" data-listing="sold">Already Sold</button>
+        </div>
+        <input type="hidden" name="listing_status" id="listingStatus" value="available">
+        <p id="soldNote" style="display:none;font-size:.78rem;color:var(--muted);margin-top:.3rem;">
+          This painting will appear in the Sold section as a showcase of your past work.
+        </p>
       </div>
       <div class="form-group">
         <label>Image *</label>
-        <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required style="padding:.4rem">
+        <input type="file" name="image" style="padding:.4rem">
       </div>
       <div class="form-group">
         <label>Style</label>
@@ -35,14 +61,28 @@
         <label>Medium</label>
         <input type="text" name="medium" placeholder="e.g. Oil on canvas">
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Width (inches)</label>
-          <input type="number" name="width_inches" step="0.1">
+      <div class="form-group">
+        <label>Dimensions</label>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
+          <span id="unitLabel" style="font-size:.82rem;color:var(--muted);">cm</span>
+          <button type="button" id="unitToggle" style="
+            position:relative;width:48px;height:26px;border-radius:13px;border:1px solid var(--border);
+            background:var(--surface-2);cursor:pointer;padding:0;transition:all .25s;
+          ">
+            <span id="unitKnob" style="
+              position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;
+              background:var(--accent);transition:transform .25s;
+            "></span>
+          </button>
+          <span id="unitLabelAlt" style="font-size:.82rem;color:var(--muted);opacity:.4;">inches</span>
         </div>
-        <div class="form-group">
-          <label>Height (inches)</label>
-          <input type="number" name="height_inches" step="0.1">
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <input type="text" inputmode="decimal" id="widthInput" name="width_inches" placeholder="Width">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <input type="text" inputmode="decimal" id="heightInput" name="height_inches" placeholder="Height">
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -54,7 +94,7 @@
         <textarea name="description" placeholder="Tell the story behind this painting..."></textarea>
       </div>
       <div id="error" class="form-error"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Upload Painting</button>
+      <button type="button" id="uploadBtn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Upload Painting</button>
     </form>
     <p style="text-align:center;margin-top:1rem;font-size:.78rem;color:var(--muted)">
       By uploading, you agree that you are responsible for shipping sold paintings.
@@ -66,14 +106,99 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const user = await loadUser();
-      if (!user || user.role !== 'artist') {
+      if (!user || (user.role !== 'artist' && user.role !== 'admin')) {
         window.location.href = '/login.html';
       }
     });
 
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const formData = new FormData(e.target);
+    // Currency toggle
+    document.querySelectorAll('[data-currency]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-currency]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('currencyInput').value = btn.dataset.currency;
+      });
+    });
+
+    // Listing status toggle
+    document.querySelectorAll('[data-listing]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-listing]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('listingStatus').value = btn.dataset.listing;
+        document.getElementById('soldNote').style.display = btn.dataset.listing === 'sold' ? 'block' : 'none';
+      });
+    });
+
+    // Unit toggle (cm ↔ inches)
+    let unitIsCm = true;
+    const CM_PER_INCH = 2.54;
+    const toggle = document.getElementById('unitToggle');
+    const knob = document.getElementById('unitKnob');
+    const labelCm = document.getElementById('unitLabel');
+    const labelIn = document.getElementById('unitLabelAlt');
+    const widthInput = document.getElementById('widthInput');
+    const heightInput = document.getElementById('heightInput');
+
+    toggle.addEventListener('click', () => {
+      const w = parseFloat(widthInput.value) || 0;
+      const h = parseFloat(heightInput.value) || 0;
+
+      unitIsCm = !unitIsCm;
+
+      if (unitIsCm) {
+        knob.style.transform = 'translateX(0)';
+        toggle.style.background = 'var(--surface-2)';
+        labelCm.style.opacity = '1'; labelCm.style.color = 'var(--accent)';
+        labelIn.style.opacity = '.4'; labelIn.style.color = 'var(--muted)';
+        widthInput.placeholder = 'Width';
+        heightInput.placeholder = 'Height';
+        if (w) widthInput.value = (w * CM_PER_INCH).toFixed(1);
+        if (h) heightInput.value = (h * CM_PER_INCH).toFixed(1);
+      } else {
+        knob.style.transform = 'translateX(22px)';
+        toggle.style.background = 'var(--accent-dim)';
+        labelIn.style.opacity = '1'; labelIn.style.color = 'var(--accent)';
+        labelCm.style.opacity = '.4'; labelCm.style.color = 'var(--muted)';
+        widthInput.placeholder = 'Width';
+        heightInput.placeholder = 'Height';
+        if (w) widthInput.value = (w / CM_PER_INCH).toFixed(1);
+        if (h) heightInput.value = (h / CM_PER_INCH).toFixed(1);
+      }
+    });
+
+    // Set initial state
+    labelCm.style.color = 'var(--accent)';
+
+    document.getElementById('uploadBtn').addEventListener('click', async () => {
+      const errEl = document.getElementById('error');
+      errEl.textContent = '';
+      const formData = new FormData(document.getElementById('uploadForm'));
+
+      // Validate required fields
+      if (!formData.get('title') || !formData.get('title').trim()) {
+        errEl.textContent = 'Please enter a title';
+        return;
+      }
+      const priceVal = formData.get('price');
+      if (!priceVal || isNaN(parseFloat(priceVal)) || parseFloat(priceVal) <= 0) {
+        errEl.textContent = 'Please enter a valid price (e.g. 250 or 250.00)';
+        return;
+      }
+      const imageFile = formData.get('image');
+      if (!imageFile || !imageFile.name || imageFile.size === 0) {
+        errEl.textContent = 'Please select an image';
+        return;
+      }
+
+      // Convert cm to inches before submitting (backend stores inches)
+      if (unitIsCm) {
+        const w = parseFloat(formData.get('width_inches'));
+        const h = parseFloat(formData.get('height_inches'));
+        if (w) formData.set('width_inches', (w / CM_PER_INCH).toFixed(2));
+        if (h) formData.set('height_inches', (h / CM_PER_INCH).toFixed(2));
+      }
+
       try {
         const res = await fetch('/api/paintings', { method: 'POST', body: formData });
         const data = await res.json();

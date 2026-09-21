@@ -3,18 +3,107 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign Up — Artistry</title>
+  <title>Sign Up — The Brush Collective</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .artist-fields {
+      display: none;
+      border-top: 1px solid var(--border);
+      margin-top: 1.2rem;
+      padding-top: 1.2rem;
+    }
+    .artist-fields.visible { display: block; }
+    .artist-fields h3 {
+      font-size: 1rem;
+      margin-bottom: .6rem;
+      color: var(--accent);
+      font-style: italic;
+    }
+    .artist-fields p.hint {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+    }
+    .currency-btn {
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+      padding: .4rem .9rem; border-radius: 6px; cursor: pointer; font-size: .82rem;
+      font-family: inherit; transition: all .2s;
+    }
+    .currency-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+    .currency-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,.1); }
+    .img-preview {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 8px;
+      margin-top: .5rem;
+      display: none;
+    }
+    /* Click-wrap agreement */
+    .agreement-section {
+      display: none;
+      border-top: 1px solid var(--border);
+      margin-top: 1.2rem;
+      padding-top: 1.2rem;
+    }
+    .agreement-section.visible { display: block; }
+    .agreement-section h3 {
+      font-size: .92rem;
+      margin-bottom: .6rem;
+      color: var(--accent);
+      font-style: italic;
+    }
+    .agreement-box {
+      max-height: 200px;
+      overflow-y: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.2rem;
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 1rem;
+    }
+    .agreement-box h4 {
+      color: var(--text);
+      font-size: .82rem;
+      margin: .8rem 0 .3rem;
+      font-weight: 600;
+    }
+    .agreement-box h4:first-child { margin-top: 0; }
+    .agreement-box ul {
+      padding-left: 1.2rem;
+      margin: .3rem 0;
+    }
+    .agreement-box ul li { margin-bottom: .25rem; }
+    .agreement-check {
+      display: flex;
+      align-items: flex-start;
+      gap: .6rem;
+      cursor: pointer;
+      font-size: .85rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .agreement-check input[type="checkbox"] {
+      margin-top: .25rem;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-brand">Artistry</a>
+    <a href="/" class="nav-brand">The Brush Collective</a>
     <div class="nav-links" id="nav-links"></div>
   </nav>
 
-  <div class="form-card">
+  <div class="form-card" style="max-width:560px">
     <h2>Create an Account</h2>
-    <form id="registerForm">
+    <form id="registerForm" enctype="multipart/form-data" novalidate>
       <div class="form-group">
         <label>Full Name</label>
         <input type="text" name="name" required>
@@ -29,13 +118,78 @@
       </div>
       <div class="form-group">
         <label>I want to...</label>
-        <select name="role">
+        <select name="role" id="roleSelect">
           <option value="buyer">Buy paintings</option>
           <option value="artist">Sell my paintings</option>
         </select>
       </div>
+
+      <!-- Artist: first painting upload (required) -->
+      <div class="artist-fields" id="artistFields">
+        <h3>Upload Your First Painting</h3>
+        <p class="hint">To join as an artist, upload at least one painting. You can add more from your dashboard later.</p>
+        <div class="form-group">
+          <label>Painting Image *</label>
+          <input type="file" name="painting_image" id="paintingImage" accept=".jpg,.jpeg,.png,.webp" style="padding:.4rem">
+          <img id="imgPreview" class="img-preview" alt="Preview">
+        </div>
+        <div class="form-group">
+          <label>Painting Title *</label>
+          <input type="text" name="painting_title" placeholder="e.g. Golden Hour in Full Bloom">
+        </div>
+        <div class="form-group">
+          <label>Price *</label>
+          <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+            <button type="button" class="currency-btn active" data-currency="USD">$ USD</button>
+            <button type="button" class="currency-btn" data-currency="EUR">&#8364; EUR</button>
+            <button type="button" class="currency-btn" data-currency="GBP">&#163; GBP</button>
+          </div>
+          <input type="text" inputmode="decimal" name="painting_price" placeholder="e.g. 250.00">
+          <input type="hidden" name="painting_currency" id="currencyInput" value="USD">
+        </div>
+      </div>
+
+      <!-- Artist Agreement (click-wrap) -->
+      <div class="agreement-section" id="agreementSection">
+        <h3>Artist Agreement</h3>
+        <div class="agreement-box">
+          <h4>1. Content Responsibility</h4>
+          <p>All artwork, images, descriptions, and related content you upload to The Brush Collective are your sole responsibility. You represent and warrant that:</p>
+          <ul>
+            <li>You are the original creator of each painting you list, or have the legal right to sell it.</li>
+            <li>Your content does not infringe on any third party's copyright, trademark, or intellectual property rights.</li>
+            <li>Your listings accurately describe the artwork (dimensions, medium, condition).</li>
+          </ul>
+
+          <h4>2. Platform Commission</h4>
+          <p>The Brush Collective charges a <strong>20% commission</strong> on every painting sold. You receive 80% of the sale price directly via Stripe Connect.</p>
+
+          <h4>3. Shipping Obligation</h4>
+          <p>You are solely responsible for shipping sold paintings to buyers, including:</p>
+          <ul>
+            <li>Shipping within <strong>7 business days</strong> of receiving an order notification.</li>
+            <li>Secure packaging to prevent damage in transit.</li>
+            <li>Providing a valid tracking number via your dashboard.</li>
+            <li>Bearing all shipping and insurance costs.</li>
+          </ul>
+
+          <h4>4. Prohibited Content</h4>
+          <p>You may not list reproductions or prints marketed as originals, artwork containing illegal or obscene content, or non-painting items (digital art, NFTs, sculptures, etc.).</p>
+
+          <h4>5. Account &amp; Removal</h4>
+          <p>The Brush Collective reserves the right to remove any content or terminate accounts that violate these terms. You may delete your account at any time from your dashboard.</p>
+
+          <h4>6. Liability</h4>
+          <p>The Brush Collective acts as an intermediary and is not liable for disputes between buyers and artists, shipping issues, or artwork authenticity claims. By joining, you agree to hold The Brush Collective harmless from any claims arising from your content or transactions.</p>
+        </div>
+        <label class="agreement-check">
+          <input type="checkbox" id="agreeCheckbox">
+          <span>I have read and agree to the <a href="/terms.html" target="_blank">Terms of Service</a> and the Artist Agreement above. I understand that all content I upload is my sole responsibility.</span>
+        </label>
+      </div>
+
       <div id="error" class="form-error"></div>
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Sign Up</button>
+      <button type="button" id="submitBtn" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem">Sign Up</button>
     </form>
     <p style="text-align:center;margin-top:1rem;font-size:.88rem;color:var(--muted)">
       Already have an account? <a href="/login.html">Log in</a>
@@ -47,15 +201,108 @@
 
   <script src="/js/app.js"></script>
   <script>
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const body = Object.fromEntries(fd);
-      try {
-        await api('/auth/register', { method: 'POST', body: JSON.stringify(body) });
-        window.location.href = body.role === 'artist' ? '/dashboard.html' : '/';
-      } catch (err) {
-        document.getElementById('error').textContent = err.message;
+    const roleSelect = document.getElementById('roleSelect');
+    const artistFields = document.getElementById('artistFields');
+    const paintingImage = document.getElementById('paintingImage');
+    const imgPreview = document.getElementById('imgPreview');
+    const errEl = document.getElementById('error');
+
+    const agreementSection = document.getElementById('agreementSection');
+    const agreeCheckbox = document.getElementById('agreeCheckbox');
+
+    // Show/hide artist painting fields + agreement based on role
+    roleSelect.addEventListener('change', () => {
+      const isArtist = roleSelect.value === 'artist';
+      artistFields.classList.toggle('visible', isArtist);
+      agreementSection.classList.toggle('visible', isArtist);
+      if (!isArtist) agreeCheckbox.checked = false;
+    });
+
+    // Image preview
+    paintingImage.addEventListener('change', () => {
+      const file = paintingImage.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => { imgPreview.src = e.target.result; imgPreview.style.display = 'block'; };
+        reader.readAsDataURL(file);
+      } else {
+        imgPreview.style.display = 'none';
+      }
+    });
+
+    // Currency toggle
+    document.querySelectorAll('[data-currency]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('[data-currency]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('currencyInput').value = btn.dataset.currency;
+      });
+    });
+
+    // Handle URL params (e.g. ?role=buyer&next=painting&id=5)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('role') === 'artist') {
+      roleSelect.value = 'artist';
+      artistFields.classList.add('visible');
+      agreementSection.classList.add('visible');
+    }
+
+    // Submit
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+      errEl.textContent = '';
+      const form = document.getElementById('registerForm');
+      const role = roleSelect.value;
+
+      if (role === 'artist') {
+        // Artist registration — validate painting fields
+        const fd = new FormData(form);
+        if (!fd.get('name') || !fd.get('name').trim()) { errEl.textContent = 'Please enter your name'; return; }
+        if (!fd.get('email') || !fd.get('email').trim()) { errEl.textContent = 'Please enter your email'; return; }
+        if (!fd.get('password') || fd.get('password').length < 8) { errEl.textContent = 'Password must be at least 8 characters'; return; }
+
+        if (!agreeCheckbox.checked) { errEl.textContent = 'You must agree to the Artist Agreement and Terms of Service to continue'; return; }
+
+        const imgFile = fd.get('painting_image');
+        if (!imgFile || !imgFile.name || imgFile.size === 0) { errEl.textContent = 'Please upload an image of your painting'; return; }
+        if (!fd.get('painting_title') || !fd.get('painting_title').trim()) { errEl.textContent = 'Please enter a title for your painting'; return; }
+        const price = fd.get('painting_price');
+        if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) { errEl.textContent = 'Please enter a valid price (e.g. 250.00)'; return; }
+
+        // Remove the role field — backend knows this is an artist registration
+        fd.delete('role');
+
+        try {
+          const btn = document.getElementById('submitBtn');
+          btn.disabled = true;
+          btn.textContent = 'Creating your profile...';
+
+          const res = await fetch('/api/auth/register-artist', { method: 'POST', body: fd, credentials: 'same-origin' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error);
+
+          window.location.href = '/painting.html?id=' + data.painting.id;
+        } catch (err) {
+          errEl.textContent = err.message;
+          const btn = document.getElementById('submitBtn');
+          btn.disabled = false;
+          btn.textContent = 'Sign Up';
+        }
+      } else {
+        // Buyer registration — original JSON flow
+        const fd = new FormData(form);
+        const body = { name: fd.get('name'), email: fd.get('email'), password: fd.get('password'), role: 'buyer' };
+        try {
+          await api('/auth/register', { method: 'POST', body: JSON.stringify(body) });
+          const next = params.get('next');
+          const id = params.get('id');
+          if (next === 'painting' && id) {
+            window.location.href = '/painting.html?id=' + id;
+          } else {
+            window.location.href = '/';
+          }
+        } catch (err) {
+          errEl.textContent = err.message;
+        }
       }
     });
   </script>

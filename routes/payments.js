@@ -64,7 +64,7 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
       mode: 'payment',
       line_items: [{
         price_data: {
-          currency: 'usd',
+          currency: (painting.currency || 'USD').toLowerCase(),
           product_data: {
             name: painting.title,
             description: `By ${painting.artist_name}`,

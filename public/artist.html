@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artist — The Brush Collective</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .artist-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .artist-header {
+      margin-bottom: 2rem;
+      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;
+    }
+    .artist-avatar {
+      width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--border); background: var(--surface-2);
+    }
+    .artist-header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 200;
+      line-height: 1.2;
+      margin-bottom: .3rem;
+    }
+    .artist-header .subtitle {
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    .artist-bio {
+      color: #bbb; font-size: .9rem; line-height: 1.7; margin-top: .4rem;
+    }
+    .artist-instagram {
+      display: inline-flex; align-items: center; gap: .4rem;
+      margin-top: .5rem; font-size: .85rem;
+    }
+    .artist-instagram a {
+      color: var(--accent); text-decoration: none;
+      display: inline-flex; align-items: center; gap: .4rem;
+    }
+    .artist-instagram a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">The Brush Collective</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="artist-page">
+    <div class="artist-header">
+      <img class="artist-avatar" id="artistAvatar" src="" alt="" style="display:none">
+      <div>
+        <h1 id="artistName"></h1>
+        <div class="subtitle" id="artistSubtitle"></div>
+        <div class="artist-bio" id="artistBio"></div>
+        <div class="artist-instagram" id="artistInstagram" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="gallery-tabs" id="tabs">
+      <button class="gallery-tab active" data-status="">All <span class="count" id="countAll">0</span></button>
+      <button class="gallery-tab" data-status="available">Available <span class="count" id="countAvailable">0</span></button>
+      <button class="gallery-tab" data-status="sold">Sold <span class="count" id="countSold">0</span></button>
+    </div>
+
+    <div class="grid" id="artistGrid"></div>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const id = new URLSearchParams(window.location.search).get('id');
+    const grid = document.getElementById('artistGrid');
+    let allPaintings = [];
+    let activeStatus = '';
+
+    document.querySelectorAll('.gallery-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.gallery-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        activeStatus = tab.dataset.status;
+        renderGrid();
+      });
+    });
+
+    function renderGrid() {
+      const filtered = activeStatus
+        ? allPaintings.filter(p => p.status === activeStatus)
+        : allPaintings;
+
+      if (!filtered.length) {
+        const msg = activeStatus === 'sold'
+          ? 'No paintings sold yet.'
+          : activeStatus === 'available'
+            ? 'No paintings available right now.'
+            : 'This artist has no paintings yet.';
+        grid.innerHTML = `<div class="empty-state">${msg}</div>`;
+        return;
+      }
+      grid.innerHTML = filtered.map(paintingCard).join('');
+    }
+
+    async function loadArtist() {
+      if (!id) {
+        grid.innerHTML = '<div class="empty-state">No artist specified.</div>';
+        return;
+      }
+
+      try {
+        // Load artist profile and paintings in parallel
+        const [artistData, data] = await Promise.all([
+          api('/auth/public/artists/' + id).catch(() => null),
+          api('/paintings?artist_id=' + id)
+        ]);
+        allPaintings = data.paintings || [];
+
+        // Show artist profile pic, bio, and instagram
+        if (artistData && artistData.artist) {
+          const a = artistData.artist;
+          if (a.profile_image) {
+            const avatar = document.getElementById('artistAvatar');
+            avatar.src = a.profile_image;
+            avatar.alt = a.name;
+            avatar.style.display = '';
+          }
+          if (a.bio) {
+            document.getElementById('artistBio').textContent = a.bio;
+          }
+          if (a.instagram_url) {
+            const igEl = document.getElementById('artistInstagram');
+            const handle = a.instagram_url.replace(/\/$/, '').split('/').pop();
+            igEl.innerHTML = '<a href="' + a.instagram_url + '" target="_blank"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>@' + handle + '</a>';
+            igEl.style.display = '';
+          }
+        }
+
+        if (!allPaintings.length) {
+          document.getElementById('artistName').textContent = artistData?.artist?.name || 'Artist';
+          document.getElementById('artistSubtitle').textContent = '0 paintings';
+          grid.innerHTML = '<div class="empty-state">This artist has no paintings yet.</div>';
+          return;
+        }
+
+        const artistName = allPaintings[0].artist_name || 'Unknown Artist';
+        document.getElementById('artistName').textContent = artistName;
+        document.title = artistName + ' \u2014 The Brush Collective';
+
+        const total = allPaintings.length;
+        document.getElementById('artistSubtitle').textContent = total + ' painting' + (total !== 1 ? 's' : '');
+
+        const avail = allPaintings.filter(p => p.status === 'available').length;
+        const sold = allPaintings.filter(p => p.status === 'sold').length;
+        document.getElementById('countAll').textContent = total;
+        document.getElementById('countAvailable').textContent = avail;
+        document.getElementById('countSold').textContent = sold;
+
+        renderGrid();
+      } catch (err) {
+        grid.innerHTML = '<div class="empty-state">Error loading artist paintings.</div>';
+      }
+    }
+
+    loadArtist();
+  </script>
+</body>
+</html>

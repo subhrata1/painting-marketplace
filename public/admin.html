@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — The Brush Collective</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .admin { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .admin h1 { font-size: 1.5rem; font-weight: 400; margin-bottom: .3rem; }
+    .admin .subtitle { color: var(--muted); margin-bottom: 2rem; }
+
+    .tabs { display: flex; gap: .5rem; margin-bottom: 2rem; }
+    .tab {
+      background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      padding: .5rem 1.2rem; border-radius: 8px; cursor: pointer; font-size: .88rem;
+      font-family: inherit; transition: all .2s;
+    }
+    .tab:hover { border-color: var(--accent-dim); color: var(--text); }
+    .tab.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,.08); }
+
+    .artist-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;
+      transition: border-color .2s;
+    }
+    .artist-card:hover { border-color: var(--accent-dim); }
+    .artist-header {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: .75rem; margin-bottom: 1rem;
+    }
+    .artist-name { font-size: 1.1rem; font-weight: 600; }
+    .artist-email { font-size: .82rem; color: var(--muted); }
+    .artist-badges { display: flex; gap: .5rem; }
+    .badge {
+      font-size: .72rem; padding: .2rem .65rem; border-radius: 20px; font-weight: 600;
+    }
+    .badge-artist { background: rgba(201,169,110,.15); color: var(--accent); }
+    .badge-admin { background: rgba(100,150,255,.15); color: #6496ff; }
+    .badge-stripe { background: rgba(68,170,136,.15); color: var(--success); }
+    .badge-no-stripe { background: rgba(200,60,60,.12); color: var(--danger); }
+
+    .artist-stats {
+      display: flex; gap: 2rem; font-size: .85rem; color: var(--muted); margin-bottom: 1rem;
+    }
+    .artist-stats strong { color: var(--text); }
+
+    .artist-paintings {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: .75rem;
+    }
+    .mini-card {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      overflow: hidden; cursor: pointer; transition: border-color .2s;
+    }
+    .mini-card:hover { border-color: var(--accent-dim); }
+    .mini-card img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+    .mini-card-body { padding: .5rem .65rem; }
+    .mini-card-body .title { font-size: .82rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mini-card-body .meta { font-size: .72rem; color: var(--muted); display: flex; justify-content: space-between; }
+
+    .all-paintings-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .user-row {
+      display: flex; gap: 1rem; align-items: center; padding: .75rem 1rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; margin-bottom: .5rem;
+    }
+    .user-row .name { font-weight: 600; flex: 1; }
+    .user-row .email { color: var(--muted); font-size: .85rem; flex: 1; }
+    .user-row .role { font-size: .8rem; }
+    .user-row .date { font-size: .78rem; color: var(--muted); }
+
+    .spotlight-admin {
+      background: var(--surface); border: 1px solid rgba(201,169,110,.25);
+      border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .spotlight-admin h3 { font-size: 1rem; font-weight: 500; margin-bottom: 1rem; color: var(--accent); }
+    .spotlight-current {
+      display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .spotlight-current img {
+      width: 120px; height: 90px; object-fit: cover; border-radius: 8px;
+    }
+    .spotlight-current-info { flex: 1; }
+    .spotlight-current-info .title { font-weight: 600; font-size: 1rem; }
+    .spotlight-current-info .artist { color: var(--muted); font-size: .85rem; }
+    .spotlight-current-info .week { color: var(--accent); font-size: .78rem; margin-top: .25rem; }
+    .spotlight-form { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+    .spotlight-form select, .spotlight-form input {
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      padding: .5rem .75rem; border-radius: 6px; font-family: inherit; font-size: .85rem;
+    }
+    .spotlight-form select { min-width: 200px; }
+    .spotlight-form input { flex: 1; min-width: 200px; }
+    .spotlight-form label { font-size: .78rem; color: var(--muted); display: block; margin-bottom: .25rem; }
+
+    /* Instagram Share Card */
+    .ig-share-section {
+      background: var(--surface); border: 1px solid rgba(201,169,110,.25);
+      border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .ig-share-section h3 { font-size: 1rem; font-weight: 500; margin-bottom: 1rem; color: var(--accent); }
+    .ig-share-actions { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .ig-share-actions .btn { font-size: .85rem; }
+    .btn-instagram {
+      background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+      color: #fff; border: none;
+    }
+    .btn-instagram:hover { opacity: .9; color: #fff; }
+    .ig-caption-box {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem; font-size: .82rem; color: var(--muted); line-height: 1.6;
+      margin-bottom: 1rem; white-space: pre-wrap; max-height: 200px; overflow-y: auto;
+    }
+    .ig-card-wrapper { display: flex; justify-content: center; margin-bottom: 1rem; }
+
+    /* The actual card rendered to image — 1080x1350 Instagram 4:5 portrait */
+    .ig-card {
+      width: 540px; height: 675px; position: relative; overflow: hidden;
+      background: #0d0d0d; border-radius: 8px;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    .ig-card-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 40%, rgba(201,169,110,.15) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 70%, rgba(180,130,70,.1) 0%, transparent 50%);
+    }
+    .ig-card-img {
+      position: absolute; top: 24px; left: 24px; right: 24px; bottom: 170px;
+      border-radius: 10px; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+      background: #111;
+    }
+    .ig-card-img img {
+      max-width: 100%; max-height: 100%; object-fit: contain; display: block;
+    }
+    .ig-card-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 170px;
+      padding: 16px 28px;
+      background: linear-gradient(to top, rgba(13,13,13,1) 60%, rgba(13,13,13,.85) 100%);
+    }
+    .ig-card-tag {
+      font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+      color: #c9a96e; margin-bottom: 6px; font-weight: 600;
+    }
+    .ig-card-painting-title {
+      font-size: 22px; font-weight: 300; color: #f5f5f5; margin-bottom: 3px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ig-card-artist {
+      font-size: 13px; color: #c9a96e; font-style: italic; margin-bottom: 10px;
+    }
+    .ig-card-details {
+      display: flex; gap: 16px; font-size: 11px; color: #aaa; margin-bottom: 10px;
+    }
+    .ig-card-price {
+      font-size: 18px; font-weight: 500; color: #c9a96e;
+    }
+    .ig-card-logo {
+      position: absolute; bottom: 16px; right: 28px;
+      font-size: 10px; color: rgba(255,255,255,.35); letter-spacing: 1px;
+    }
+    .ig-card-accent-line {
+      position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+      background: linear-gradient(90deg, transparent, #c9a96e, transparent);
+    }
+
+    /* New This Week Instagram card */
+    .ntw-ig-card {
+      width: 540px; height: 675px; position: relative; overflow: hidden;
+      background: #0d0d0d; border-radius: 8px;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    .ntw-ig-card-bg {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 30% 40%, rgba(201,169,110,.18) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 70%, rgba(180,130,70,.12) 0%, transparent 50%);
+    }
+    .ntw-ig-card-accent {
+      position: absolute; top: 0; left: 20%; right: 20%; height: 2px;
+      background: linear-gradient(90deg, transparent, #c9a96e, transparent);
+    }
+    .ntw-ig-header {
+      position: absolute; top: 20px; left: 28px; right: 28px;
+    }
+    .ntw-ig-header-tag {
+      font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+      color: #c9a96e; font-weight: 600; margin-bottom: 4px;
+    }
+    .ntw-ig-header-title {
+      font-size: 20px; font-weight: 300; color: #f5f5f5;
+    }
+    .ntw-ig-grid {
+      position: absolute; top: 70px; left: 20px; right: 20px; bottom: 50px;
+      display: grid; gap: 8px;
+    }
+    .ntw-ig-grid.items-1 { grid-template-columns: 1fr; }
+    .ntw-ig-grid.items-2 { grid-template-columns: 1fr 1fr; }
+    .ntw-ig-grid.items-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .ntw-ig-grid.items-3 .ntw-ig-item:first-child { grid-row: 1 / -1; }
+    .ntw-ig-grid.items-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .ntw-ig-item {
+      border-radius: 8px; overflow: hidden; position: relative;
+    }
+    .ntw-ig-item img {
+      width: 100%; height: 100%; object-fit: contain; display: block;
+      background: #111;
+    }
+    .ntw-ig-item-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 100%);
+      padding: 8px 10px;
+    }
+    .ntw-ig-item-title {
+      font-size: 11px; color: #fff; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ntw-ig-item-artist {
+      font-size: 9px; color: #c9a96e; font-style: italic;
+    }
+    .ntw-ig-item-price {
+      font-size: 10px; color: #ddd;
+    }
+    .ntw-ig-logo {
+      position: absolute; bottom: 16px; right: 28px;
+      font-size: 10px; color: rgba(255,255,255,.35); letter-spacing: 1px;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+    .ntw-ig-url {
+      position: absolute; bottom: 16px; left: 28px;
+      font-size: 10px; color: rgba(201,169,110,.6); letter-spacing: .5px;
+      font-family: Georgia, 'Times New Roman', serif;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">The Brush Collective</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="admin" id="admin">
+    <div class="empty-state">Loading...</div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="/js/app.js"></script>
+  <script>
+    let allArtists = [];
+    let allPaintings = [];
+    let allUsers = [];
+    let newThisWeek = [];
+    let currentSpotlight = null;
+    let activeTab = 'spotlight';
+
+    async function load() {
+      const user = await loadUser();
+      if (!user || user.role !== 'admin') {
+        window.location.href = '/';
+        return;
+      }
+
+      // Load all data
+      const [artistsData, paintingsData, usersData, spotlightData, ntwData] = await Promise.all([
+        api('/auth/artists'),
+        api('/paintings/admin/all'),
+        api('/auth/users'),
+        api('/paintings/spotlight'),
+        api('/paintings/new-this-week'),
+      ]);
+
+      allArtists = artistsData.artists;
+      allPaintings = paintingsData.paintings;
+      allUsers = usersData.users;
+      currentSpotlight = spotlightData.spotlight;
+      newThisWeek = ntwData.paintings || [];
+
+      render();
+    }
+
+    function render() {
+      const admin = document.getElementById('admin');
+      const totalSales = allPaintings.filter(p => p.status === 'sold').length;
+      const totalListed = allPaintings.filter(p => p.status === 'available').length;
+
+      admin.innerHTML = `
+        <h1>Admin Panel</h1>
+        <p class="subtitle">Manage your marketplace — all artists, paintings, and users</p>
+
+        <div class="stats" style="margin-bottom:2rem">
+          <div class="stat-card" style="cursor:pointer" onclick="switchTab('artists')">
+            <div class="label">Total Artists</div>
+            <div class="value">${allArtists.length}</div>
+          </div>
+          <div class="stat-card" style="cursor:pointer" onclick="switchTab('paintings')">
+            <div class="label">Listed Paintings</div>
+            <div class="value">${totalListed}</div>
+          </div>
+          <div class="stat-card" style="cursor:pointer" onclick="switchTab('paintings')">
+            <div class="label">Sold</div>
+            <div class="value" style="color:var(--success)">${totalSales}</div>
+          </div>
+          <div class="stat-card" style="cursor:pointer" onclick="switchTab('users')">
+            <div class="label">Total Users</div>
+            <div class="value">${allUsers.length}</div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button class="tab ${activeTab === 'spotlight' ? 'active' : ''}" onclick="switchTab('spotlight')">Spotlight</button>
+          <button class="tab ${activeTab === 'newthisweek' ? 'active' : ''}" onclick="switchTab('newthisweek')">New This Week</button>
+          <button class="tab ${activeTab === 'artists' ? 'active' : ''}" onclick="switchTab('artists')">Artists</button>
+          <button class="tab ${activeTab === 'paintings' ? 'active' : ''}" onclick="switchTab('paintings')">All Paintings</button>
+          <button class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="switchTab('users')">All Users</button>
+        </div>
+
+        <div id="tabContent"></div>
+      `;
+
+      renderTab();
+    }
+
+    function switchTab(tab) {
+      activeTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+      renderTab();
+    }
+
+    function renderTab() {
+      const el = document.getElementById('tabContent');
+
+      if (activeTab === 'spotlight') {
+        const availablePaintings = allPaintings.filter(p => p.status === 'available' || p.status === 'sold');
+        let html = '';
+
+        // Current spotlight info
+        html += '<div class="spotlight-admin"><h3>Current Spotlight</h3>';
+        if (currentSpotlight) {
+          html += '<div class="spotlight-current">';
+          html += '<img src="' + currentSpotlight.image_path + '" alt="' + esc(currentSpotlight.title) + '">';
+          html += '<div class="spotlight-current-info">';
+          html += '<div class="title">' + esc(currentSpotlight.title) + '</div>';
+          html += '<div class="artist">by ' + esc(currentSpotlight.artist_name) + '</div>';
+          html += '<div class="week">' + currentSpotlight.week_start + ' — ' + currentSpotlight.week_end + (currentSpotlight.auto_selected ? ' (auto-selected)' : ' (manual)') + '</div>';
+          if (currentSpotlight.message) {
+            html += '<div style="color:var(--muted);font-size:.82rem;font-style:italic;margin-top:.25rem">"' + esc(currentSpotlight.message) + '"</div>';
+          }
+          html += '</div></div>';
+        } else {
+          html += '<p style="color:var(--muted);font-size:.85rem;">No spotlight set for this week. Select one below or it will auto-select on Monday.</p>';
+        }
+        html += '</div>';
+
+        // Instagram share section
+        if (currentSpotlight) {
+          const s = currentSpotlight;
+          html += '<div class="ig-share-section">';
+          html += '<h3>Share to Instagram</h3>';
+          html += '<div class="ig-share-actions">';
+          html += '<button class="btn btn-instagram btn-sm" onclick="downloadShareCard()">Download Image</button>';
+          html += '<button class="btn btn-primary btn-sm" onclick="copyCaption()">Copy Caption</button>';
+          html += '</div>';
+          html += '<div class="ig-card-wrapper">';
+          html += '<div class="ig-card" id="igCard">';
+          html += '<div class="ig-card-bg"></div>';
+          html += '<div class="ig-card-accent-line"></div>';
+          html += '<div class="ig-card-img"><img src="' + s.image_path + '" alt="' + esc(s.title) + '" crossorigin="anonymous"></div>';
+          html += '<div class="ig-card-overlay">';
+          html += '<div class="ig-card-tag">Spotlight of the Week</div>';
+          html += '<div class="ig-card-painting-title">' + esc(s.title) + '</div>';
+          html += '<div class="ig-card-artist">by ' + esc(s.artist_name) + '</div>';
+          html += '<div class="ig-card-details">';
+          if (s.style) html += '<span>' + esc(s.style) + '</span>';
+          if (s.medium) html += '<span>' + esc(s.medium) + '</span>';
+          html += s.painting_status === 'available' ? '<span style="color:#44aa88">Available</span>' : '<span style="color:#c0392b">Sold</span>';
+          html += '</div>';
+          html += '<div class="ig-card-price">' + formatPrice(s.price_cents, s.currency) + '</div>';
+          html += '<div class="ig-card-logo">THE BRUSH COLLECTIVE</div>';
+          html += '</div></div></div>';
+          html += '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem;">Caption preview:</p>';
+          html += '<div class="ig-caption-box" id="igCaption"></div>';
+          html += '</div>';
+        }
+
+        // Set spotlight form
+        html += '<div class="spotlight-admin"><h3>Set This Week\'s Spotlight</h3>';
+        html += '<div class="spotlight-form" id="spotlightForm">';
+        html += '<div><label>Painting</label><select id="spotlightPaintingSelect"><option value="">Choose a painting...</option>';
+        availablePaintings.forEach(function(p) {
+          html += '<option value="' + p.id + '">' + esc(p.title) + ' — ' + esc(p.artist_name) + ' (' + p.status + ')</option>';
+        });
+        html += '</select></div>';
+        html += '<div><label>Message (optional)</label><input type="text" id="spotlightMessage" placeholder="e.g. A stunning piece that captures..."></div>';
+        html += '<div style="display:flex;align-items:center;gap:.5rem;"><input type="checkbox" id="postToInstagram" checked><label for="postToInstagram" style="margin:0;cursor:pointer;">Auto-post to Instagram</label></div>';
+        html += '<button class="btn btn-primary btn-sm" onclick="setSpotlight()">Set Spotlight</button>';
+        html += '</div></div>';
+
+        el.innerHTML = html;
+
+        // Fill caption separately to avoid template issues
+        if (currentSpotlight) {
+          var captionEl = document.getElementById('igCaption');
+          if (captionEl) captionEl.textContent = generateCaption(currentSpotlight);
+        }
+        return;
+      }
+
+      if (activeTab === 'newthisweek') {
+        if (!newThisWeek.length) {
+          el.innerHTML = '<div class="empty-state">No new paintings added this week.</div>';
+          return;
+        }
+
+        let html = '';
+
+        // Auto-post status
+        const today = new Date();
+        const dayOfWeek = today.getDay(); // 0=Sun, 5=Fri
+        const daysUntilFriday = (5 - dayOfWeek + 7) % 7 || 7;
+        const nextFriday = new Date(today);
+        nextFriday.setDate(today.getDate() + daysUntilFriday);
+        const isFriday = dayOfWeek === 5;
+
+        html += '<div style="background:rgba(201,169,110,.08);border:1px solid rgba(201,169,110,.2);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">';
+        html += '<span style="font-size:1.2rem;">&#128197;</span>';
+        html += '<div>';
+        html += '<div style="font-size:.85rem;font-weight:600;color:var(--text);">Auto-post to Instagram</div>';
+        html += '<div style="font-size:.78rem;color:var(--muted);">' + (isFriday ? 'Posting today at 10:00 AM UTC' : 'Next auto-post: Friday ' + nextFriday.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' at 10:00 AM UTC') + '</div>';
+        html += '</div>';
+        html += '<span style="margin-left:auto;font-size:.75rem;padding:.25rem .6rem;border-radius:4px;background:rgba(68,170,136,.15);color:var(--success);font-weight:600;">Active</span>';
+        html += '</div>';
+
+        html += '<div class="ig-share-section">';
+        html += '<h3>New This Week — Instagram Post</h3>';
+        html += '<p style="font-size:.82rem;color:var(--muted);margin-bottom:1.2rem;">' + newThisWeek.length + ' painting(s) added this week. Generate an Instagram post image and caption below.</p>';
+        html += '<div class="ig-share-actions">';
+        html += '<button class="btn btn-instagram btn-sm" onclick="downloadNtwCard()">Download Image</button>';
+        html += '<button class="btn btn-primary btn-sm" onclick="copyNtwCaption()">Copy Caption</button>';
+        html += '</div>';
+
+        // Instagram card preview
+        const gridClass = newThisWeek.length === 1 ? 'items-1' : newThisWeek.length === 2 ? 'items-2' : newThisWeek.length === 3 ? 'items-3' : 'items-4';
+        const items = newThisWeek.slice(0, 4);
+
+        html += '<div class="ig-card-wrapper">';
+        html += '<div class="ntw-ig-card" id="ntwIgCard">';
+        html += '<div class="ntw-ig-card-bg"></div>';
+        html += '<div class="ntw-ig-card-accent"></div>';
+        html += '<div class="ntw-ig-header"><div class="ntw-ig-header-tag">Just Added</div><div class="ntw-ig-header-title">New This Week</div></div>';
+        html += '<div class="ntw-ig-grid ' + gridClass + '">';
+        items.forEach(function(p) {
+          html += '<div class="ntw-ig-item">';
+          html += '<img src="' + p.image_path + '" alt="' + esc(p.title) + '" crossorigin="anonymous">';
+          html += '<div class="ntw-ig-item-overlay">';
+          html += '<div class="ntw-ig-item-title">' + esc(p.title) + '</div>';
+          html += '<div class="ntw-ig-item-artist">by ' + esc(p.artist_name) + '</div>';
+          html += '<div class="ntw-ig-item-price">' + formatPrice(p.price_cents, p.currency) + '</div>';
+          html += '</div></div>';
+        });
+        html += '</div>';
+        html += '<div class="ntw-ig-url">thebrushcollective.com</div>';
+        html += '<div class="ntw-ig-logo">THE BRUSH COLLECTIVE</div>';
+        html += '</div></div>';
+
+        // Caption preview
+        html += '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.5rem;margin-top:1rem;">Caption preview:</p>';
+        html += '<div class="ig-caption-box" id="ntwCaption"></div>';
+        html += '</div>';
+
+        // Individual painting cards with download
+        html += '<div class="spotlight-admin"><h3>Individual Posts</h3>';
+        html += '<p style="font-size:.82rem;color:var(--muted);margin-bottom:1.5rem;">Download each painting as its own Instagram post with caption.</p>';
+        newThisWeek.forEach(function(p, idx) {
+          const price = formatPrice(p.price_cents, p.currency);
+          html += '<div style="margin-bottom:2rem;padding-bottom:2rem;border-bottom:1px solid var(--border);">';
+          html += '<div style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;flex-wrap:wrap;">';
+          html += '<strong style="font-size:.95rem;">' + esc(p.title) + '</strong>';
+          html += '<span style="font-size:.82rem;color:var(--muted);">by ' + esc(p.artist_name) + '</span>';
+          html += '<div style="margin-left:auto;display:flex;gap:.5rem;">';
+          html += '<button class="btn btn-instagram btn-sm" onclick="downloadIndividualCard(' + idx + ')">Download Image</button>';
+          html += '<button class="btn btn-primary btn-sm" onclick="copyIndividualCaption(' + idx + ')">Copy Caption</button>';
+          html += '</div></div>';
+
+          // Individual IG card
+          html += '<div class="ig-card-wrapper">';
+          html += '<div class="ig-card" id="individualCard-' + idx + '">';
+          html += '<div class="ig-card-bg"></div>';
+          html += '<div class="ig-card-accent-line"></div>';
+          html += '<div class="ig-card-img"><img src="' + p.image_path + '" alt="' + esc(p.title) + '" crossorigin="anonymous"></div>';
+          html += '<div class="ig-card-overlay">';
+          html += '<div class="ig-card-tag">New This Week</div>';
+          html += '<div class="ig-card-painting-title">' + esc(p.title) + '</div>';
+          html += '<div class="ig-card-artist">by ' + esc(p.artist_name) + '</div>';
+          html += '<div class="ig-card-details">';
+          if (p.style) html += '<span>' + esc(p.style) + '</span>';
+          if (p.medium) html += '<span>' + esc(p.medium) + '</span>';
+          html += '<span style="color:#44aa88">Available</span>';
+          html += '</div>';
+          html += '<div class="ig-card-price">' + price + '</div>';
+          html += '<div class="ig-card-logo">THE BRUSH COLLECTIVE</div>';
+          html += '</div></div></div>';
+
+          // Caption preview
+          html += '<p style="font-size:.78rem;color:var(--muted);margin-bottom:.4rem;margin-top:.75rem;">Caption:</p>';
+          html += '<div class="ig-caption-box" id="individualCaption-' + idx + '"></div>';
+          html += '</div>';
+        });
+        html += '</div>';
+
+        el.innerHTML = html;
+
+        // Fill captions
+        var captionEl = document.getElementById('ntwCaption');
+        if (captionEl) captionEl.textContent = generateNtwCaption();
+        // Fill individual captions
+        newThisWeek.forEach(function(p, idx) {
+          var el2 = document.getElementById('individualCaption-' + idx);
+          if (el2) el2.textContent = generateIndividualCaption(p);
+        });
+        return;
+      }
+
+      if (activeTab === 'artists') {
+        if (!allArtists.length) {
+          el.innerHTML = '<div class="empty-state">No artists have signed up yet.</div>';
+          return;
+        }
+        el.innerHTML = allArtists.map(a => {
+          const artistPaintings = allPaintings.filter(p => p.artist_id === a.id);
+          return `
+            <div class="artist-card">
+              <div class="artist-header">
+                <div>
+                  <div class="artist-name">${esc(a.name)}</div>
+                  <div class="artist-email">${esc(a.email)} &middot; Joined ${new Date(a.created_at).toLocaleDateString()}</div>
+                </div>
+                <div class="artist-badges">
+                  <span class="badge ${a.role === 'admin' ? 'badge-admin' : 'badge-artist'}">${a.role}</span>
+                  <span class="badge ${a.stripe_onboarded ? 'badge-stripe' : 'badge-no-stripe'}">
+                    ${a.stripe_onboarded ? 'Stripe connected' : 'No Stripe'}
+                  </span>
+                </div>
+              </div>
+              <div class="artist-stats" style="align-items:center">
+                <span>Listed: <strong>${a.painting_count}</strong></span>
+                <span>Sold: <strong>${a.sold_count}</strong></span>
+                <div style="margin-left:auto;display:flex;gap:.5rem;">
+                  <button class="btn btn-sm" id="resend-btn-${a.id}" style="border-color:var(--accent);color:var(--accent)" onclick="event.stopPropagation();resendWelcome(${a.id},'${esc(a.name).replace(/'/g,"\\'")}')">&#9993; Resend Welcome Email</button>
+                  ${a.role !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation();deleteUser(${a.id},'${esc(a.name).replace(/'/g,"\\'")}')">Delete Artist</button>` : ''}
+                </div>
+              </div>
+              ${artistPaintings.length ? `
+                <div class="artist-paintings">
+                  ${artistPaintings.map(p => `
+                    <div class="mini-card">
+                      <div onclick="location.href='/painting.html?id=${p.id}'" style="cursor:pointer">
+                        <img src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
+                        <div class="mini-card-body">
+                          <div class="title">${esc(p.title)}</div>
+                          <div class="meta">
+                            <span>${formatPrice(p.price_cents, p.currency)}</span>
+                            <span>${p.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div style="padding:.35rem .5rem .5rem">
+                        <button class="btn btn-danger btn-sm" style="width:100%;justify-content:center;font-size:.7rem;padding:.25rem" onclick="deletePainting(${p.id},'${esc(p.title).replace(/'/g,"\\'")}')">Remove</button>
+                      </div>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : '<p style="color:var(--muted);font-size:.85rem;">No paintings uploaded yet.</p>'}
+            </div>`;
+        }).join('');
+      }
+
+      if (activeTab === 'paintings') {
+        if (!allPaintings.length) {
+          el.innerHTML = '<div class="empty-state">No paintings uploaded yet.</div>';
+          return;
+        }
+        el.innerHTML = `<div class="all-paintings-grid">
+          ${allPaintings.map(p => `
+            <div class="card" style="position:relative">
+              <div onclick="location.href='/painting.html?id=${p.id}'" style="cursor:pointer">
+                <img src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
+                <div class="card-body">
+                  <div class="card-title">${esc(p.title)}</div>
+                  <div class="card-artist">${esc(p.artist_name)}</div>
+                  <div class="card-price">${formatPrice(p.price_cents, p.currency)}</div>
+                  <div class="card-meta">
+                    <span>${p.status}</span>
+                    ${p.style ? `<span>${esc(p.style)}</span>` : ''}
+                  </div>
+                </div>
+              </div>
+              <div style="padding:0 1rem 1rem;">
+                <button class="btn btn-danger btn-sm" style="width:100%;justify-content:center" onclick="deletePainting(${p.id},'${esc(p.title).replace(/'/g,"\\'")}')">Remove Painting</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+      }
+
+      if (activeTab === 'users') {
+        el.innerHTML = allUsers.map(u => `
+          <div class="user-row">
+            <span class="name">${esc(u.name)}</span>
+            <span class="email">${esc(u.email)}</span>
+            <span class="badge ${u.role === 'admin' ? 'badge-admin' : u.role === 'artist' ? 'badge-artist' : ''} role">${u.role}</span>
+            <span class="date">${new Date(u.created_at).toLocaleDateString()}</span>
+            ${u.role !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${esc(u.name).replace(/'/g,"\\'")}')">Delete</button>` : ''}
+          </div>
+        `).join('');
+      }
+    }
+
+    async function deletePainting(id, title) {
+      if (!confirm(`Remove "${title}"? This will hide it from the gallery.`)) return;
+      try {
+        await api('/paintings/' + id, { method: 'DELETE' });
+        allPaintings = allPaintings.filter(p => p.id !== id);
+        render();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function resendWelcome(id, name) {
+      if (!confirm(`Resend welcome email to "${name}"?`)) return;
+      const btn = document.getElementById('resend-btn-' + id);
+      try {
+        if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+        const result = await api('/auth/users/' + id + '/resend-welcome', { method: 'POST' });
+        alert(result.message || 'Welcome email sent!');
+        if (btn) { btn.textContent = 'Sent!'; btn.style.color = 'var(--success)'; btn.style.borderColor = 'var(--success)'; }
+      } catch (err) {
+        alert('Failed: ' + err.message);
+        if (btn) { btn.disabled = false; btn.textContent = '✉ Resend Welcome Email'; }
+      }
+    }
+
+    async function deleteUser(id, name) {
+      if (!confirm(`Delete user "${name}"? This will remove their account and all their paintings. This cannot be undone.`)) return;
+      try {
+        await api('/auth/users/' + id, { method: 'DELETE' });
+        allUsers = allUsers.filter(u => u.id !== id);
+        allArtists = allArtists.filter(a => a.id !== id);
+        allPaintings = allPaintings.filter(p => p.artist_id !== id);
+        render();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function generateCaption(s) {
+      try {
+        const price = formatPrice(s.price_cents, s.currency);
+        let caption = 'Spotlight of the Week\n\n';
+        caption += '"' + s.title + '" by ' + s.artist_name + '\n';
+        if (s.message) caption += '\n"' + s.message + '"\n';
+        caption += '\n';
+        if (s.style) caption += 'Style: ' + s.style + '\n';
+        if (s.medium) caption += 'Medium: ' + s.medium + '\n';
+        caption += 'Price: ' + price + '\n';
+        caption += 'Status: ' + (s.painting_status === 'available' ? 'Available' : 'Sold') + '\n';
+        caption += '\nDiscover this piece and explore our curated gallery of original paintings from artists worldwide.\n';
+        caption += '\nthebrushcollective.com\n';
+        caption += '\n#art #painting #originalart #artcollector #contemporaryart #artforsale #thebrushcollective #spotlightoftheweek #artgallery #fineart';
+        return caption;
+      } catch(e) {
+        console.error('generateCaption error:', e);
+        return 'Spotlight of the Week - ' + (s.title || '');
+      }
+    }
+
+    async function downloadShareCard() {
+      const card = document.getElementById('igCard');
+      if (!card) return alert('No share card found.');
+      try {
+        const canvas = await html2canvas(card, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#0d0d0d',
+          width: 540,
+          height: 675,
+        });
+        const link = document.createElement('a');
+        link.download = 'spotlight-of-the-week.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        alert('Error generating image: ' + err.message);
+      }
+    }
+
+    async function copyCaption() {
+      const caption = document.getElementById('igCaption');
+      if (!caption) return;
+      try {
+        await navigator.clipboard.writeText(caption.textContent);
+        alert('Caption copied to clipboard! Paste it into your Instagram post.');
+      } catch {
+        // Fallback
+        const range = document.createRange();
+        range.selectNode(caption);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        alert('Caption copied!');
+      }
+    }
+
+    async function setSpotlight() {
+      const paintingId = document.getElementById('spotlightPaintingSelect').value;
+      const message = document.getElementById('spotlightMessage').value.trim();
+      const postToIg = document.getElementById('postToInstagram').checked;
+      if (!paintingId) return alert('Please select a painting.');
+      try {
+        await api('/paintings/spotlight', {
+          method: 'POST',
+          body: JSON.stringify({
+            painting_id: Number(paintingId),
+            message: message || undefined,
+            skip_instagram: !postToIg,
+          }),
+        });
+        // Reload spotlight data
+        const spotlightData = await api('/paintings/spotlight');
+        currentSpotlight = spotlightData.spotlight;
+        renderTab();
+        alert('Spotlight updated!');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function generateNtwCaption() {
+      let caption = 'Just Added — New This Week\n\n';
+      caption += 'Fresh original works have arrived at The Brush Collective:\n\n';
+      newThisWeek.forEach(function(p, i) {
+        const price = formatPrice(p.price_cents, p.currency);
+        caption += (i + 1) + '. "' + p.title + '" by ' + p.artist_name;
+        if (p.style) caption += ' | ' + p.style;
+        caption += ' — ' + price + '\n';
+      });
+      caption += '\nExplore these pieces and more at thebrushcollective.com\n';
+      caption += '\n#art #painting #originalart #newart #artcollector #contemporaryart #artforsale #thebrushcollective #justadded #artgallery #fineart';
+      return caption;
+    }
+
+    async function downloadNtwCard() {
+      const card = document.getElementById('ntwIgCard');
+      if (!card) return alert('No card found.');
+      try {
+        const canvas = await html2canvas(card, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#0d0d0d',
+          width: 540,
+          height: 675,
+        });
+        const link = document.createElement('a');
+        link.download = 'new-this-week.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        alert('Error generating image: ' + err.message);
+      }
+    }
+
+    function generateIndividualCaption(p) {
+      const price = formatPrice(p.price_cents, p.currency);
+      let caption = 'New This Week\n\n';
+      caption += '"' + p.title + '" by ' + p.artist_name + '\n\n';
+      if (p.description) caption += p.description + '\n\n';
+      if (p.style) caption += 'Style: ' + p.style + '\n';
+      if (p.medium) caption += 'Medium: ' + p.medium + '\n';
+      if (p.year_created) caption += 'Year: ' + p.year_created + '\n';
+      if (p.width_inches && p.height_inches) caption += 'Size: ' + p.width_inches + '" × ' + p.height_inches + '"\n';
+      caption += 'Price: ' + price + '\n';
+      caption += '\nDiscover this piece at thebrushcollective.com\n';
+      caption += '\n#art #painting #originalart #newart #artcollector #contemporaryart #artforsale #thebrushcollective #justadded #artgallery #fineart';
+      if (p.style) caption += ' #' + p.style.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return caption;
+    }
+
+    async function downloadIndividualCard(idx) {
+      const card = document.getElementById('individualCard-' + idx);
+      if (!card) return alert('Card not found.');
+      const painting = newThisWeek[idx];
+      try {
+        const canvas = await html2canvas(card, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#0d0d0d',
+          width: 540,
+          height: 675,
+        });
+        const link = document.createElement('a');
+        const filename = (painting.title || 'painting').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        link.download = filename + '-ig.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        alert('Error generating image: ' + err.message);
+      }
+    }
+
+    async function copyIndividualCaption(idx) {
+      const caption = document.getElementById('individualCaption-' + idx);
+      if (!caption) return;
+      try {
+        await navigator.clipboard.writeText(caption.textContent);
+        alert('Caption copied to clipboard!');
+      } catch {
+        const range = document.createRange();
+        range.selectNode(caption);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        alert('Caption copied!');
+      }
+    }
+
+    async function copyNtwCaption() {
+      const caption = document.getElementById('ntwCaption');
+      if (!caption) return;
+      try {
+        await navigator.clipboard.writeText(caption.textContent);
+        alert('Caption copied to clipboard! Paste it into your Instagram post.');
+      } catch {
+        const range = document.createRange();
+        range.selectNode(caption);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand('copy');
+        alert('Caption copied!');
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

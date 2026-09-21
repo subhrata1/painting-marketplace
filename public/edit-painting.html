@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Painting — The Brush Collective</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .currency-btn {
+      background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+      padding: .4rem .9rem; border-radius: 6px; cursor: pointer; font-size: .82rem;
+      font-family: inherit; transition: all .2s;
+    }
+    .currency-btn:hover { border-color: var(--accent-dim); color: var(--text); }
+    .currency-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(201,169,110,.1); }
+    .current-image { width: 100%; max-width: 300px; border-radius: 8px; margin-bottom: .75rem; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="/" class="nav-brand">The Brush Collective</a>
+    <div class="nav-links" id="nav-links"></div>
+  </nav>
+
+  <div class="form-card" style="max-width:560px">
+    <h2>Edit Painting</h2>
+    <div id="loading" class="empty-state">Loading...</div>
+    <form id="editForm" style="display:none">
+      <div class="form-group">
+        <label>Current Image</label>
+        <img id="currentImage" class="current-image" alt="">
+        <p style="font-size:.78rem;color:var(--muted)">Image cannot be changed after upload.</p>
+      </div>
+      <div class="form-group">
+        <label>Title *</label>
+        <input type="text" name="title" id="titleInput" required>
+      </div>
+      <div class="form-group">
+        <label>Price *</label>
+        <div style="display:flex;gap:.5rem;margin-bottom:.5rem;" id="currencyBtns">
+          <button type="button" class="currency-btn" data-currency="USD">$ USD</button>
+          <button type="button" class="currency-btn" data-currency="EUR">&#8364; EUR</button>
+          <button type="button" class="currency-btn" data-currency="GBP">&#163; GBP</button>
+        </div>
+        <input type="text" inputmode="decimal" name="price" id="priceInput" required placeholder="e.g. 250.00">
+        <input type="hidden" name="currency" id="currencyInput" value="USD">
+      </div>
+      <div class="form-group">
+        <label>Listing Status</label>
+        <div style="display:flex;gap:.5rem;margin-bottom:.5rem;" id="statusBtns">
+          <button type="button" class="currency-btn" data-listing="available">Available for Sale</button>
+          <button type="button" class="currency-btn" data-listing="sold">Already Sold</button>
+        </div>
+        <input type="hidden" name="status" id="statusInput" value="available">
+      </div>
+      <div class="form-group">
+        <label>Style</label>
+        <input type="text" name="style" id="styleInput" placeholder="e.g. Impressionism, Abstract">
+      </div>
+      <div class="form-group">
+        <label>Medium</label>
+        <input type="text" name="medium" id="mediumInput" placeholder="e.g. Oil on canvas">
+      </div>
+      <div class="form-group">
+        <label>Dimensions (inches)</label>
+        <div class="form-row">
+          <div class="form-group" style="margin-bottom:0">
+            <input type="text" inputmode="decimal" name="width_inches" id="widthInput" placeholder="Width">
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <input type="text" inputmode="decimal" name="height_inches" id="heightInput" placeholder="Height">
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Year Created</label>
+        <input type="text" name="year_created" id="yearInput" placeholder="e.g. 2024">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" id="descInput" placeholder="Tell the story behind this painting..."></textarea>
+      </div>
+      <div id="error" class="form-error"></div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center">Save Changes</button>
+        <a id="cancelLink" href="/dashboard.html" class="btn" style="justify-content:center">Cancel</a>
+      </div>
+    </form>
+  </div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    const paintingId = new URLSearchParams(location.search).get('id');
+    let painting = null;
+
+    async function initEditPage() {
+      try {
+        const user = await loadUser();
+        if (!user || (user.role !== 'artist' && user.role !== 'admin')) {
+          window.location.href = '/login.html';
+          return;
+        }
+        if (!paintingId) {
+          document.getElementById('loading').textContent = 'Painting not found';
+          return;
+        }
+
+        const data = await api('/paintings/' + paintingId);
+        painting = data.painting;
+
+        if (user.id !== painting.artist_id && user.role !== 'admin') {
+          document.getElementById('loading').textContent = 'Not authorized to edit this painting';
+          return;
+        }
+
+        // Populate form fields
+        document.getElementById('currentImage').src = painting.image_path;
+        document.getElementById('titleInput').value = painting.title || '';
+        document.getElementById('priceInput').value = painting.price_cents ? (painting.price_cents / 100).toFixed(2) : '';
+        document.getElementById('styleInput').value = painting.style || '';
+        document.getElementById('mediumInput').value = painting.medium || '';
+        document.getElementById('widthInput').value = painting.width_inches || '';
+        document.getElementById('heightInput').value = painting.height_inches || '';
+        document.getElementById('yearInput').value = painting.year_created || '';
+        document.getElementById('descInput').value = painting.description || '';
+        document.getElementById('cancelLink').href = '/painting.html?id=' + paintingId;
+
+        // Set active currency button
+        const curr = painting.currency || 'USD';
+        document.getElementById('currencyInput').value = curr;
+        document.querySelectorAll('#currencyBtns [data-currency]').forEach(function(btn) {
+          if (btn.dataset.currency === curr) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+
+        // Set active status button
+        var st = painting.status || 'available';
+        document.getElementById('statusInput').value = st;
+        document.querySelectorAll('#statusBtns [data-listing]').forEach(function(btn) {
+          if (btn.dataset.listing === st) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+
+        // Show form, hide loading
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('editForm').style.display = 'block';
+        document.title = 'Edit: ' + painting.title + ' \u2014 The Brush Collective';
+      } catch (err) {
+        document.getElementById('loading').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Currency toggle
+    document.querySelectorAll('#currencyBtns [data-currency]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#currencyBtns [data-currency]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById('currencyInput').value = btn.dataset.currency;
+      });
+    });
+
+    // Status toggle
+    document.querySelectorAll('#statusBtns [data-listing]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('#statusBtns [data-listing]').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById('statusInput').value = btn.dataset.listing;
+      });
+    });
+
+    // Submit handler
+    document.getElementById('editForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      var errEl = document.getElementById('error');
+      errEl.textContent = '';
+
+      var priceVal = document.getElementById('priceInput').value;
+      if (!priceVal || isNaN(parseFloat(priceVal)) || parseFloat(priceVal) <= 0) {
+        errEl.textContent = 'Please enter a valid price';
+        return;
+      }
+
+      var body = {
+        title: document.getElementById('titleInput').value,
+        price: priceVal,
+        currency: document.getElementById('currencyInput').value,
+        status: document.getElementById('statusInput').value,
+        style: document.getElementById('styleInput').value || '',
+        medium: document.getElementById('mediumInput').value || '',
+        width_inches: document.getElementById('widthInput').value || null,
+        height_inches: document.getElementById('heightInput').value || null,
+        year_created: document.getElementById('yearInput').value || '',
+        description: document.getElementById('descInput').value || '',
+      };
+
+      try {
+        await api('/paintings/' + paintingId, {
+          method: 'PUT',
+          body: JSON.stringify(body),
+        });
+        window.location.href = '/painting.html?id=' + paintingId;
+      } catch (err) {
+        errEl.textContent = err.message;
+      }
+    });
+
+    // Start
+    initEditPage();
+  </script>
+</body>
+</html>

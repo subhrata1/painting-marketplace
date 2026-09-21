@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — Artistry</title>
+  <title>Login — The Brush Collective</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-brand">Artistry</a>
+    <a href="/" class="nav-brand">The Brush Collective</a>
     <div class="nav-links" id="nav-links"></div>
   </nav>
 
@@ -35,13 +35,22 @@
   <script>
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const errEl = document.getElementById('error');
+      errEl.textContent = 'Logging in...';
       const fd = new FormData(e.target);
       const body = Object.fromEntries(fd);
       try {
-        const data = await api('/auth/login', { method: 'POST', body: JSON.stringify(body) });
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Login failed');
         window.location.href = data.user.role === 'artist' ? '/dashboard.html' : '/';
       } catch (err) {
-        document.getElementById('error').textContent = err.message;
+        errEl.textContent = err.message;
       }
     });
   </script>

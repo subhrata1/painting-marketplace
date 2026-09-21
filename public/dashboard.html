@@ -3,12 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artist Dashboard — Artistry</title>
+  <title>Artist Dashboard — The Brush Collective</title>
   <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .profile-section { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .profile-pic-wrap { position: relative; width: 90px; height: 90px; flex-shrink: 0; }
+    .profile-pic {
+      width: 90px; height: 90px; border-radius: 50%; object-fit: cover;
+      border: 2px solid var(--border); background: var(--surface-2);
+    }
+    .profile-pic-upload {
+      position: absolute; bottom: 0; right: 0; width: 28px; height: 28px;
+      border-radius: 50%; background: var(--accent); color: #111;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: .85rem; border: 2px solid var(--bg);
+      transition: background .2s;
+    }
+    .profile-pic-upload:hover { background: var(--accent-dim); }
+    .profile-pic-upload input { display: none; }
+    .profile-info h1 { font-size: 1.5rem; font-weight: 400; margin-bottom: .15rem; }
+    .profile-info .email { font-size: .85rem; color: var(--muted); }
+    .profile-bio { margin-top: .4rem; }
+    .profile-bio textarea {
+      width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border);
+      padding: .5rem .8rem; border-radius: 8px; font-size: .85rem; font-family: inherit;
+      resize: vertical; min-height: 60px; outline: none;
+    }
+    .profile-bio textarea:focus { border-color: var(--accent); }
+  </style>
 </head>
 <body>
   <nav>
-    <a href="/" class="nav-brand">Artistry</a>
+    <a href="/" class="nav-brand">The Brush Collective</a>
     <div class="nav-links" id="nav-links"></div>
   </nav>
 
@@ -20,7 +46,7 @@
   <script>
     async function load() {
       const user = await loadUser();
-      if (!user || user.role !== 'artist') {
+      if (!user || (user.role !== 'artist' && user.role !== 'admin')) {
         window.location.href = '/login.html';
         return;
       }
@@ -40,8 +66,27 @@
       const pendingShip = sales.filter(o => o.status === 'paid').length;
 
       dash.innerHTML = `
-        <h1>Artist Dashboard</h1>
-        <p class="subtitle">Welcome back, ${esc(user.name)}</p>
+        <div class="profile-section">
+          <div class="profile-pic-wrap">
+            <img class="profile-pic" id="profilePic" src="${user.profile_image || 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 90 90%22><rect fill=%22%23222%22 width=%2290%22 height=%2290%22/><text x=%2245%22 y=%2255%22 text-anchor=%22middle%22 fill=%22%23888%22 font-size=%2236%22 font-family=%22sans-serif%22>${esc(user.name.charAt(0).toUpperCase())}</text></svg>'}" alt="${esc(user.name)}">
+            <label class="profile-pic-upload" title="Change photo">
+              <span>&#9998;</span>
+              <input type="file" id="photoInput" accept=".jpg,.jpeg,.png,.webp">
+            </label>
+          </div>
+          <div class="profile-info">
+            <h1>${esc(user.name)}</h1>
+            <div class="email">${esc(user.email)}</div>
+            <div class="profile-bio">
+              <textarea id="bioInput" placeholder="Write a short bio about yourself...">${esc(user.bio || '')}</textarea>
+              <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                <input type="text" id="instagramInput" placeholder="Instagram URL (e.g. https://instagram.com/yourhandle)" value="${esc(user.instagram_url || '')}" style="flex:1;font-size:.82rem;padding:.4rem .6rem;">
+              </div>
+              <button class="btn btn-sm" id="saveBioBtn" style="margin-top:.5rem">Save Profile</button>
+            </div>
+          </div>
+        </div>
 
         ${!user.stripe_onboarded ? `
           <div style="background:rgba(201,169,110,.1);border:1px solid var(--accent);border-radius:10px;padding:1.25rem;margin-bottom:2rem;">
@@ -75,15 +120,21 @@
 
         <div class="grid" style="margin-top:1rem">
           ${paintings.length ? paintings.map(p => `
-            <div class="card" onclick="location.href='/painting.html?id=${p.id}'">
-              <img src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
-              <div class="card-body">
-                <div class="card-title">${esc(p.title)}</div>
-                <div class="card-price">${formatPrice(p.price_cents)}</div>
-                <div class="card-meta">
-                  <span>${p.status}</span>
-                  ${p.style ? `<span>${esc(p.style)}</span>` : ''}
+            <div class="card" style="position:relative">
+              <div onclick="location.href='/painting.html?id=${p.id}'" style="cursor:pointer">
+                <img src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
+                <div class="card-body">
+                  <div class="card-title">${esc(p.title)}</div>
+                  <div class="card-price">${formatPrice(p.price_cents, p.currency)}</div>
+                  <div class="card-meta">
+                    <span>${p.status}</span>
+                    ${p.style ? `<span>${esc(p.style)}</span>` : ''}
+                  </div>
                 </div>
+              </div>
+              <div style="padding:0 1rem 1rem;display:flex;gap:.5rem">
+                <a href="/painting.html?id=${p.id}" class="btn btn-sm" style="flex:1;justify-content:center" onclick="event.stopPropagation()">Edit</a>
+                <button class="btn btn-danger btn-sm" style="flex:1;justify-content:center" onclick="deletePainting(${p.id},'${esc(p.title).replace(/'/g,"\\'")}')">Delete</button>
               </div>
             </div>
           `).join('') : '<div class="empty-state">No paintings yet. Upload your first!</div>'}
@@ -103,7 +154,47 @@
               ${o.status === 'paid' ? `<button class="btn btn-sm" onclick="event.stopPropagation();markShipped(${o.id})">Mark Shipped</button>` : ''}
             </div>
           `).join('')}` : ''}
+
+        <div style="margin-top:4rem;padding-top:2rem;border-top:1px solid var(--border);">
+          <h3 class="section-title" style="color:var(--danger)">Danger Zone</h3>
+          <div style="background:rgba(204,68,68,.06);border:1px solid rgba(204,68,68,.2);border-radius:10px;padding:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+            <div>
+              <strong style="color:var(--danger)">Delete your account</strong>
+              <p style="font-size:.82rem;color:var(--muted);margin-top:.2rem;">
+                Permanently remove your account and all your paintings. This cannot be undone.
+              </p>
+            </div>
+            <button class="btn btn-danger btn-sm" id="deleteAccountBtn">Delete Account</button>
+          </div>
+        </div>
       `;
+
+      // Profile photo upload
+      document.getElementById('photoInput').addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('photo', file);
+        try {
+          const r = await api('/auth/me/photo', { method: 'POST', body: fd });
+          document.getElementById('profilePic').src = r.profile_image + '?t=' + Date.now();
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      // Save profile (bio + instagram)
+      document.getElementById('saveBioBtn').addEventListener('click', async () => {
+        const bio = document.getElementById('bioInput').value.trim();
+        const instagram_url = document.getElementById('instagramInput').value.trim();
+        try {
+          await api('/auth/me', { method: 'PUT', body: JSON.stringify({ bio, instagram_url }) });
+          document.getElementById('saveBioBtn').textContent = 'Saved!';
+          setTimeout(() => document.getElementById('saveBioBtn').textContent = 'Save Profile', 2000);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
 
       // Stripe connect button
       const connectBtn = document.getElementById('connectBtn');
@@ -116,6 +207,33 @@
             alert(err.message);
           }
         });
+      }
+
+      // Delete account button
+      document.getElementById('deleteAccountBtn').addEventListener('click', async () => {
+        const confirmed = confirm('Are you sure you want to delete your account? All your paintings will be removed. This cannot be undone.');
+        if (!confirmed) return;
+
+        const doubleConfirm = prompt('Type DELETE to confirm account deletion:');
+        if (doubleConfirm !== 'DELETE') return;
+
+        try {
+          await api('/auth/me', { method: 'DELETE' });
+          alert('Your account has been deleted.');
+          window.location.href = '/';
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+    }
+
+    async function deletePainting(id, title) {
+      if (!confirm(`Delete "${title}"? This will remove it from the gallery.`)) return;
+      try {
+        await api('/paintings/' + id, { method: 'DELETE' });
+        location.reload();
+      } catch (err) {
+        alert(err.message);
       }
     }
 

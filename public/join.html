@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join The Brush Collective — Sell Your Paintings to the World</title>
+  <meta name="description" content="The Brush Collective is a curated online marketplace where artists sell original paintings directly to collectors worldwide. Keep 80% of every sale. Join free.">
+
+  <!-- Open Graph for Instagram / Facebook -->
+  <meta property="og:title" content="The Brush Collective — Where Every Brushstroke Finds Its Buyer">
+  <meta property="og:description" content="A curated marketplace for artists to sell original paintings worldwide. Keep 80%. Ship direct. Join free.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://painting-marketplace-production.up.railway.app/join.html">
+
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { overflow-x: hidden; }
+
+    /* ---- Landing Hero ---- */
+    .land-hero {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      padding: 2rem 1.5rem; position: relative; overflow: hidden;
+    }
+    .land-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 30% 20%, rgba(201,169,110,.15) 0%, transparent 55%),
+        radial-gradient(ellipse at 70% 70%, rgba(160,80,45,.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(80,60,130,.08) 0%, transparent 60%);
+      animation: pulse 10s ease-in-out infinite alternate;
+    }
+    @keyframes pulse {
+      0%   { opacity: .5; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1.08); }
+    }
+    .land-hero > * { position: relative; z-index: 1; }
+
+    .land-badge {
+      display: inline-block; font-size: .68rem; letter-spacing: .22em;
+      text-transform: uppercase; color: var(--accent);
+      border: 1px solid rgba(201,169,110,.35); padding: .4rem 1.4rem;
+      border-radius: 30px; margin-bottom: 1.5rem;
+      animation: fadeUp .7s ease-out;
+    }
+    .land-hero h1 {
+      font-size: clamp(2rem, 7vw, 3.8rem); font-weight: 200;
+      line-height: 1.12; margin-bottom: 1rem; max-width: 700px;
+      animation: fadeUp .7s ease-out .1s both;
+    }
+    .land-hero h1 span { color: var(--accent); font-weight: 400; }
+    .land-hero h1 em { font-style: normal; color: var(--success); font-weight: 400; }
+    .land-hero .subtitle {
+      font-size: 1.1rem; color: var(--muted); max-width: 500px;
+      line-height: 1.7; margin-bottom: 2.5rem;
+      animation: fadeUp .7s ease-out .2s both;
+    }
+    .land-cta {
+      animation: fadeUp .7s ease-out .3s both;
+      display: flex; flex-direction: column; align-items: center; gap: .75rem;
+    }
+    .land-cta .btn { padding: .85rem 2.5rem; font-size: 1.05rem; }
+    .land-cta .note { font-size: .78rem; color: var(--muted); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ---- How it works ---- */
+    .how-section {
+      max-width: 900px; margin: 0 auto; padding: 4rem 2rem;
+    }
+    .how-section h2 {
+      text-align: center; font-size: 1.5rem; font-weight: 300; margin-bottom: 2.5rem;
+    }
+    .how-section h2 span { color: var(--accent); }
+
+    .steps {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem; counter-reset: step;
+    }
+    .step {
+      text-align: center; position: relative;
+    }
+    .step::before {
+      counter-increment: step;
+      content: counter(step);
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: rgba(201,169,110,.12); border: 2px solid var(--accent);
+      color: var(--accent); font-size: 1.2rem; font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .step h3 { font-size: .95rem; font-weight: 600; margin-bottom: .4rem; }
+    .step p { font-size: .85rem; color: var(--muted); line-height: 1.6; }
+
+    /* ---- Numbers ---- */
+    .numbers {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1.5rem; max-width: 800px; margin: 0 auto; padding: 3rem 2rem;
+    }
+    .number-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.5rem; text-align: center;
+    }
+    .number-card .big {
+      font-size: 2.2rem; font-weight: 700; color: var(--accent); line-height: 1;
+    }
+    .number-card .label { font-size: .82rem; color: var(--muted); margin-top: .4rem; }
+
+    /* ---- Testimonial / Quote ---- */
+    .quote-section {
+      max-width: 700px; margin: 0 auto; padding: 3rem 2rem; text-align: center;
+    }
+    .quote-section blockquote {
+      font-size: 1.2rem; font-weight: 300; font-style: italic;
+      color: var(--text); line-height: 1.8; margin-bottom: 1rem;
+    }
+    .quote-section blockquote::before { content: '\201C'; color: var(--accent); font-size: 2rem; }
+    .quote-section blockquote::after { content: '\201D'; color: var(--accent); font-size: 2rem; }
+    .quote-section .attribution { font-size: .85rem; color: var(--muted); }
+
+    /* ---- What you get ---- */
+    .perks {
+      max-width: 900px; margin: 0 auto; padding: 3rem 2rem;
+    }
+    .perks h2 {
+      text-align: center; font-size: 1.5rem; font-weight: 300; margin-bottom: 2rem;
+    }
+    .perks h2 span { color: var(--accent); }
+    .perk-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+    }
+    .perk {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem;
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .perk-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: .1rem; }
+    .perk h3 { font-size: .92rem; font-weight: 600; margin-bottom: .25rem; }
+    .perk p { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+
+    /* ---- Final CTA ---- */
+    .final-cta {
+      text-align: center; padding: 4rem 2rem;
+      background: linear-gradient(180deg, transparent, rgba(201,169,110,.06));
+    }
+    .final-cta h2 {
+      font-size: clamp(1.5rem, 4vw, 2.2rem); font-weight: 200; margin-bottom: .75rem;
+    }
+    .final-cta h2 span { color: var(--accent); font-weight: 400; }
+    .final-cta p { color: var(--muted); margin-bottom: 2rem; max-width: 450px; margin-left: auto; margin-right: auto; }
+    .final-cta .btn { padding: .85rem 2.5rem; font-size: 1.05rem; }
+
+    /* ---- Landing footer ---- */
+    .land-footer {
+      border-top: 1px solid var(--border); padding: 1.5rem 2rem;
+      text-align: center; color: var(--muted); font-size: .78rem;
+    }
+    .land-footer a { color: var(--accent); }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 600px) {
+      .land-hero { min-height: 90vh; padding: 1.5rem; }
+      .how-section, .perks { padding: 3rem 1.25rem; }
+      .numbers { padding: 2rem 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Minimal nav — no distraction -->
+  <nav style="position:absolute;top:0;left:0;right:0;z-index:10;background:transparent;border:none;">
+    <a href="/" style="font-size:.85rem;color:var(--muted);text-decoration:none;display:inline-flex;align-items:center;gap:.3rem;margin-right:.75rem;">&larr; Home</a>
+    <a href="/" class="nav-brand">The Brush Collective</a>
+  </nav>
+
+  <!-- Hero -->
+  <section class="land-hero">
+    <div class="land-badge">Now Open for Artists Worldwide</div>
+    <h1>Your Paintings Deserve <span>More Than a Wall.</span> They Deserve <em>a Buyer.</em></h1>
+    <p class="subtitle">The Brush Collective is a curated marketplace where artists sell original paintings directly to collectors around the world. No gallery middlemen. You keep 80% of every sale.</p>
+    <div class="land-cta">
+      <a href="/register.html" class="btn btn-primary">Join as an Artist — It's Free</a>
+      <span class="note">No listing fees. No monthly charges. You only pay when you sell.</span>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-section">
+    <h2>How <span>It Works</span></h2>
+    <div class="steps">
+      <div class="step">
+        <h3>Create Your Profile</h3>
+        <p>Sign up free as an artist. Add your name, bio, and connect your payment account.</p>
+      </div>
+      <div class="step">
+        <h3>Upload Your Paintings</h3>
+        <p>Photograph your work, set your price in USD, EUR, or GBP, and publish to the gallery.</p>
+      </div>
+      <div class="step">
+        <h3>A Collector Buys</h3>
+        <p>Buyers discover your work, purchase securely via Stripe, and you get notified instantly.</p>
+      </div>
+      <div class="step">
+        <h3>You Ship, You Earn</h3>
+        <p>Ship the painting from your studio. 80% of the sale hits your account. Done.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider" style="max-width:900px;margin:0 auto;border-top:1px solid var(--border);"></div>
+
+  <!-- Numbers -->
+  <section class="numbers">
+    <div class="number-card">
+      <div class="big">80%</div>
+      <div class="label">Goes directly to you</div>
+    </div>
+    <div class="number-card">
+      <div class="big">$0</div>
+      <div class="label">To list your paintings</div>
+    </div>
+    <div class="number-card">
+      <div class="big">3 min</div>
+      <div class="label">To set up your profile</div>
+    </div>
+    <div class="number-card">
+      <div class="big">Global</div>
+      <div class="label">Reach collectors worldwide</div>
+    </div>
+  </section>
+
+  <!-- Quote -->
+  <section class="quote-section">
+    <blockquote>I spent years posting my paintings on social media hoping someone would ask to buy. The Brush Collective gave me a real storefront — my first sale came within a week.</blockquote>
+    <div class="attribution">— Independent artist, London</div>
+  </section>
+
+  <div class="section-divider" style="max-width:900px;margin:0 auto;border-top:1px solid var(--border);"></div>
+
+  <!-- What you get -->
+  <section class="perks">
+    <h2>What You Get <span>as an Artist</span></h2>
+    <div class="perk-grid">
+      <div class="perk">
+        <div class="perk-icon">&#127912;</div>
+        <div>
+          <h3>Your Own Curated Space</h3>
+          <p>A personal dashboard to manage your paintings, track sales, and update listings anytime.</p>
+        </div>
+      </div>
+      <div class="perk">
+        <div class="perk-icon">&#128176;</div>
+        <div>
+          <h3>Fair, Transparent Pricing</h3>
+          <p>You set the price. No hidden fees. The 20% platform fee only applies when you make a sale.</p>
+        </div>
+      </div>
+      <div class="perk">
+        <div class="perk-icon">&#127758;</div>
+        <div>
+          <h3>Global Audience</h3>
+          <p>Your paintings are seen by collectors from the US, Europe, UK, Australia, and beyond.</p>
+        </div>
+      </div>
+      <div class="perk">
+        <div class="perk-icon">&#128274;</div>
+        <div>
+          <h3>Secure Payments via Stripe</h3>
+          <p>Get paid directly into your bank account. Stripe handles everything securely.</p>
+        </div>
+      </div>
+      <div class="perk">
+        <div class="perk-icon">&#128666;</div>
+        <div>
+          <h3>You Control Shipping</h3>
+          <p>Ship from your own studio. No warehouses, no middlemen. Stay connected to every piece.</p>
+        </div>
+      </div>
+      <div class="perk">
+        <div class="perk-icon">&#128200;</div>
+        <div>
+          <h3>Showcase Sold Work Too</h3>
+          <p>Upload already-sold pieces to build your portfolio and show collectors your track record.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta">
+    <h2>Stop scrolling. <span>Start selling.</span></h2>
+    <p>Thousands of collectors are looking for original art. Your next buyer is one upload away.</p>
+    <a href="/register.html" class="btn btn-primary">Create Your Free Artist Account</a>
+    <p style="margin-top:1rem;font-size:.78rem;color:var(--muted);">
+      Already have an account? <a href="/login.html" style="color:var(--accent)">Log in</a>
+    </p>
+  </section>
+
+  <!-- Footer -->
+  <footer class="land-footer">
+    <p>The Brush Collective &mdash; Where every brushstroke finds its buyer</p>
+    <p style="margin-top:.4rem;">
+      <a href="/">Gallery</a> &middot;
+      <a href="/terms.html">Terms</a> &middot;
+      <a href="/register.html">Join</a>
+    </p>
+  </footer>
+
+</body>
+</html>

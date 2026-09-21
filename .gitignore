@@ -4,3 +4,6 @@ db/marketplace.db
 db/marketplace.db-wal
 db/marketplace.db-shm
 .env
+backups/
+.DS_Store
+**/.DS_Store
