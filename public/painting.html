@@ -128,6 +128,7 @@
     const id = new URLSearchParams(location.search).get('id');
     const detail = document.getElementById('detail');
     let paintingData = null;
+    let allSeries = [];
 
     async function load() {
       await loadUser();
@@ -136,6 +137,7 @@
       try {
         const data = await api('/paintings/' + id);
         paintingData = data.painting;
+        try { allSeries = (await api('/paintings/meta/series')).series || []; } catch { allSeries = []; }
         renderView();
       } catch (err) {
         detail.innerHTML = '<div class="empty-state">' + err.message + '</div>';
@@ -243,7 +245,17 @@
           </div>
           <div class="form-group">
             <label>Series / Collection</label>
-            <input type="text" id="editSeries" value="${esc(p.series || '')}" placeholder="e.g. Gold and Black Series">
+            <select id="editSeriesSelect">
+              <option value="">— None —</option>
+              ${(function(){
+                var cur = (p.series || '').trim();
+                var opts = allSeries.slice();
+                if (cur && opts.indexOf(cur) === -1) opts.push(cur);
+                return opts.map(function(s){ return '<option value="' + esc(s) + '"' + (s === cur ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('');
+              })()}
+              <option value="__new__">➕ Add a new series…</option>
+            </select>
+            <input type="text" id="editSeriesNew" placeholder="New series name" style="display:none;margin-top:.5rem;">
           </div>
           <div class="form-group">
             <label>Medium</label>
@@ -298,6 +310,13 @@
           btn.classList.add('active');
           document.getElementById('editStatus').value = btn.dataset.listing;
         });
+      });
+
+      // Series dropdown: reveal the "new series" box when chosen
+      document.getElementById('editSeriesSelect').addEventListener('change', function() {
+        var box = document.getElementById('editSeriesNew');
+        if (this.value === '__new__') { box.style.display = ''; box.focus(); }
+        else { box.style.display = 'none'; box.value = ''; }
       });
 
       // Unit toggle (cm ↔ inches)
@@ -361,7 +380,7 @@
           currency: document.getElementById('editCurrency').value,
           status: document.getElementById('editStatus').value,
           style: document.getElementById('editStyle').value.trim(),
-          series: document.getElementById('editSeries').value.trim(),
+          series: (function(){ var sel = document.getElementById('editSeriesSelect').value; return sel === '__new__' ? document.getElementById('editSeriesNew').value.trim() : sel; })(),
           medium: document.getElementById('editMedium').value.trim(),
           width_inches: widthVal || null,
           height_inches: heightVal || null,
