@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS paintings (
   description TEXT,
   style TEXT,
   medium TEXT,
+  series TEXT,
   year_created TEXT,
   width_inches REAL,
   height_inches REAL,

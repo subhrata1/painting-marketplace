@@ -80,6 +80,22 @@
       font-size: .72rem; opacity: .7; margin-left: .3rem;
     }
 
+    /* Series sections */
+    .series-block { margin-bottom: 3rem; }
+    .series-block:last-child { margin-bottom: 0; }
+    .series-heading {
+      display: flex; align-items: baseline; gap: .6rem;
+      font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+      font-weight: 300; margin-bottom: 1.25rem;
+      padding-bottom: .6rem;
+      border-bottom: 1px solid rgba(201,169,110,.25);
+    }
+    .series-heading .series-name { color: var(--accent); font-weight: 400; }
+    .series-heading .series-count {
+      font-size: .72rem; color: var(--muted); font-weight: 400;
+      letter-spacing: .05em;
+    }
+
     /* Painting grid */
     .gallery-grid {
       display: grid;
@@ -191,6 +207,7 @@
       <input type="text" id="searchInput" placeholder="Search by title or artist...">
       <select id="artistFilter"><option value="">All Artists</option></select>
       <select id="styleFilter"><option value="">All Styles</option></select>
+      <select id="seriesFilter"><option value="">All Series</option></select>
     </div>
 
     <div class="gallery-tabs">
@@ -199,7 +216,7 @@
       <button class="gallery-tab-btn" data-status="sold">Sold <span class="count" id="countSold">0</span></button>
     </div>
 
-    <div class="gallery-grid" id="galleryGrid"></div>
+    <div id="galleryGrid"></div>
   </div>
 
   <footer style="border-top:1px solid var(--border);padding:1.5rem 2rem;text-align:center;color:var(--muted);font-size:.8rem;">
@@ -212,7 +229,11 @@
     const searchInput = document.getElementById('searchInput');
     const artistFilter = document.getElementById('artistFilter');
     const styleFilter = document.getElementById('styleFilter');
+    const seriesFilter = document.getElementById('seriesFilter');
     let activeStatus = '';
+
+    // Pre-select a series if linked from a painting (e.g. ?series=Gold%20and%20Black%20Series)
+    const urlSeries = new URLSearchParams(location.search).get('series');
 
     // Tab buttons
     document.querySelectorAll('.gallery-tab-btn').forEach(btn => {
@@ -244,12 +265,50 @@
       } catch {}
     }
 
+    // Load series/collections for filter
+    async function loadSeries() {
+      try {
+        const data = await api('/paintings/meta/series');
+        (data.series || []).forEach(s => {
+          const sel = urlSeries && urlSeries === s ? ' selected' : '';
+          seriesFilter.innerHTML += `<option value="${esc(s)}"${sel}>${esc(s)}</option>`;
+        });
+      } catch {}
+    }
+
+    // Single painting card
+    function cardHtml(p) {
+      const price = formatPrice(p.price_cents, p.currency);
+      const isSold = p.status === 'sold';
+      return `
+        <div class="gallery-item" onclick="location.href='/painting.html?id=${p.id}'">
+          <div ${isSold ? 'class="gallery-item-sold-overlay"' : ''}>
+            <img class="gallery-item-img" src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
+          </div>
+          <div class="gallery-item-info">
+            <div class="gallery-item-artist">${esc(p.artist_name || '')}</div>
+            <div class="gallery-item-title">${esc(p.title)}</div>
+            <div class="gallery-item-price">${isSold ? '<span class="gallery-item-status sold">Sold</span>' : price}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function sectionHtml(name, items) {
+      const count = items.length + (items.length === 1 ? ' work' : ' works');
+      const heading = name
+        ? `<h2 class="series-heading"><span class="series-name">${esc(name)}</span><span class="series-count">${count}</span></h2>`
+        : '';
+      return `<section class="series-block">${heading}<div class="gallery-grid">${items.map(cardHtml).join('')}</div></section>`;
+    }
+
     // Load paintings
     async function loadPaintings() {
       const params = new URLSearchParams();
       if (searchInput.value.trim()) params.set('search', searchInput.value.trim());
       if (artistFilter.value) params.set('artist_id', artistFilter.value);
       if (styleFilter.value) params.set('style', styleFilter.value);
+      if (seriesFilter.value) params.set('series', seriesFilter.value);
       if (activeStatus) params.set('status', activeStatus);
 
       try {
@@ -266,22 +325,26 @@
           return;
         }
 
-        grid.innerHTML = data.paintings.map(p => {
-          const price = formatPrice(p.price_cents, p.currency);
-          const isSold = p.status === 'sold';
-          return `
-            <div class="gallery-item" onclick="location.href='/painting.html?id=${p.id}'">
-              <div ${isSold ? 'class="gallery-item-sold-overlay"' : ''}>
-                <img class="gallery-item-img" src="${p.image_path}" alt="${esc(p.title)}" loading="lazy">
-              </div>
-              <div class="gallery-item-info">
-                <div class="gallery-item-artist">${esc(p.artist_name || '')}</div>
-                <div class="gallery-item-title">${esc(p.title)}</div>
-                <div class="gallery-item-price">${isSold ? '<span class="gallery-item-status sold">Sold</span>' : price}</div>
-              </div>
-            </div>
-          `;
-        }).join('');
+        // Group by series, preserving order of first appearance (created_at DESC)
+        const groups = new Map(); // series name -> [paintings]
+        const ungrouped = [];
+        data.paintings.forEach(p => {
+          const s = (p.series && p.series.trim()) ? p.series.trim() : null;
+          if (!s) { ungrouped.push(p); return; }
+          if (!groups.has(s)) groups.set(s, []);
+          groups.get(s).push(p);
+        });
+
+        // If nobody has used series yet, keep the original flat, heading-less grid.
+        if (groups.size === 0) {
+          grid.innerHTML = sectionHtml(null, ungrouped);
+          return;
+        }
+
+        let html = '';
+        for (const [name, items] of groups) html += sectionHtml(name, items);
+        if (ungrouped.length) html += sectionHtml('Other Works', ungrouped);
+        grid.innerHTML = html;
       } catch (err) {
         grid.innerHTML = '<div class="gallery-empty">Error loading paintings.</div>';
       }
@@ -295,10 +358,12 @@
     });
     artistFilter.addEventListener('change', loadPaintings);
     styleFilter.addEventListener('change', loadPaintings);
+    seriesFilter.addEventListener('change', loadPaintings);
 
     loadArtists();
     loadStyles();
-    loadPaintings();
+    // Populate the series filter (pre-selecting ?series= if present), then load
+    loadSeries().then(loadPaintings);
   </script>
 </body>
 </html>

@@ -276,6 +276,7 @@ Manage aliases at: https://app.improvmx.com
 | description | TEXT | Optional |
 | style | TEXT | e.g. "Impressionism", "Abstract" |
 | medium | TEXT | e.g. "Oil on canvas" |
+| series | TEXT | Optional named collection, e.g. "Gold and Black Series" — groups paintings into sections in the gallery |
 | year_created | TEXT | Optional |
 | width_inches | REAL | Stored in inches (frontend converts cm) |
 | height_inches | REAL | Stored in inches |
@@ -367,6 +368,7 @@ Unique constraint: (painting_id, fingerprint) — one reaction per visitor per p
 | GET | /spotlight | No | Get current week's spotlight (painting + artist details) |
 | POST | /spotlight | Admin | Set spotlight for current week (auto-posts to Instagram) |
 | GET | /meta/styles | No | Get distinct styles for filter dropdown |
+| GET | /meta/series | No | Get distinct series/collections for gallery grouping + filter |
 | GET | /artist/mine | Artist | Get my paintings |
 | GET | /admin/all | Admin | Get all paintings across all artists |
 | GET | /:id | No | Get single painting detail |
@@ -496,3 +498,4 @@ See the full Meta Ads Manager setup guide in conversation history.
 27. **Artist Instagram profiles** — Added `instagram_url` column to users table. Artists can set their Instagram URL in their dashboard. Shows on their public artist profile page (`/artist.html?id=X`) with IG icon and clickable handle. Admin can also set via `PUT /api/auth/artists/:id/instagram`.
 28. **Homepage restructure** — Replaced inline gallery with link to gallery page. Added side-by-side CTA row (sell your art + about/contact with email and Instagram handle). Moved disclaimer to footer. Aligned Spotlight and New This Week sections to same max-width (900px) with left-aligned headings.
 29. **Top navigation update** — Added "Sell Your Art" link (to `/join.html`) in the persistent top nav beside Terms. Join page has "← Home" back link.
+30. **Series / Collections** — Optional `series` field on paintings lets artists/admin group related works into named collections (e.g. "Gold and Black Series"). Added on the upload form (with datalist suggestions from existing series) and the painting detail inline-edit form. The gallery groups paintings under series headings, adds an "All Series" filter dropdown, and supports deep-linking via `?series=NAME` (painting detail pages link the series to its filtered gallery view). Paintings without a series appear under "Other Works"; if no series exist yet, the gallery renders the original flat grid. New column `paintings.series` (migration in `db/index.js`), filter param on `GET /api/paintings`, and `GET /api/paintings/meta/series` endpoint.

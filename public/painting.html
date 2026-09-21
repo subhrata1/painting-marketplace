@@ -159,6 +159,7 @@
           <div class="price">${p.status === 'sold' ? '<span style="color:var(--danger)">SOLD</span>' : formatPrice(p.price_cents, p.currency)}</div>
           <div class="details">
             ${p.style ? '<div>Style: ' + esc(p.style) + '</div>' : ''}
+            ${p.series ? '<div>Series: <a href="/gallery.html?series=' + encodeURIComponent(p.series) + '" style="color:var(--accent);text-decoration:none">' + esc(p.series) + '</a></div>' : ''}
             ${p.medium ? '<div>Medium: ' + esc(p.medium) + '</div>' : ''}
             ${p.width_inches && p.height_inches ? '<div>Size: ' + p.width_inches + '" x ' + p.height_inches + '"</div>' : ''}
             ${p.year_created ? '<div>Year: ' + p.year_created + '</div>' : ''}
@@ -239,6 +240,10 @@
           <div class="form-group">
             <label>Style</label>
             <input type="text" id="editStyle" value="${esc(p.style || '')}" placeholder="e.g. Impressionism">
+          </div>
+          <div class="form-group">
+            <label>Series / Collection</label>
+            <input type="text" id="editSeries" value="${esc(p.series || '')}" placeholder="e.g. Gold and Black Series">
           </div>
           <div class="form-group">
             <label>Medium</label>
@@ -356,6 +361,7 @@
           currency: document.getElementById('editCurrency').value,
           status: document.getElementById('editStatus').value,
           style: document.getElementById('editStyle').value.trim(),
+          series: document.getElementById('editSeries').value.trim(),
           medium: document.getElementById('editMedium').value.trim(),
           width_inches: widthVal || null,
           height_inches: heightVal || null,

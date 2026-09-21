@@ -74,6 +74,12 @@ router.get('/meta/styles', (_req, res) => {
   res.json({ styles: rows.map(r => r.style) });
 });
 
+// Get series/collections for filtering
+router.get('/meta/series', (_req, res) => {
+  const rows = db.prepare("SELECT DISTINCT series FROM paintings WHERE series IS NOT NULL AND TRIM(series) != '' AND status IN ('available', 'sold') ORDER BY series").all();
+  res.json({ series: rows.map(r => r.series) });
+});
+
 // Get current spotlight (public)
 router.get('/spotlight', (_req, res) => {
   const spotlight = db.prepare(`
@@ -138,7 +144,7 @@ router.post('/spotlight', authenticateToken, requireRole('admin'), (req, res) =>
 
 // List paintings (public) — supports status filter: available, sold, or both
 router.get('/', (req, res) => {
-  const { style, search, artist_id, status, limit = 50, offset = 0 } = req.query;
+  const { style, series, search, artist_id, status, limit = 50, offset = 0 } = req.query;
   const allowedStatuses = ['available', 'sold'];
   const statusFilter = allowedStatuses.includes(status) ? status : null;
 
@@ -147,6 +153,7 @@ router.get('/', (req, res) => {
 
   if (statusFilter) { sql += ' AND p.status = ?'; params.push(statusFilter); }
   if (style) { sql += ' AND p.style = ?'; params.push(style); }
+  if (series) { sql += ' AND p.series = ?'; params.push(series); }
   if (artist_id) { sql += ' AND p.artist_id = ?'; params.push(artist_id); }
   if (search) {
     sql += ' AND (p.title LIKE ? OR p.description LIKE ? OR u.name LIKE ?)';
@@ -190,7 +197,7 @@ router.post('/', authenticateToken, requireRole('artist', 'admin'), (req, res, n
     // Allow upload if moderation fails (don't block artists due to AI errors)
   }
 
-  const { title, description, style, medium, year_created, width_inches, height_inches, price, currency, listing_status } = req.body;
+  const { title, description, style, medium, series, year_created, width_inches, height_inches, price, currency, listing_status } = req.body;
   if (!title || !price) return res.status(400).json({ error: 'Title and price are required' });
 
   const priceCents = Math.round(parseFloat(price) * 100);
@@ -200,10 +207,11 @@ router.post('/', authenticateToken, requireRole('artist', 'admin'), (req, res, n
   const status = listing_status === 'sold' ? 'sold' : 'available';
 
   const result = db.prepare(
-    `INSERT INTO paintings (artist_id, title, description, style, medium, year_created, width_inches, height_inches, price_cents, currency, image_path, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO paintings (artist_id, title, description, style, medium, series, year_created, width_inches, height_inches, price_cents, currency, image_path, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     req.user.id, title, description || null, style || null, medium || null,
+    (series && series.trim()) ? series.trim() : null,
     year_created || null, width_inches || null, height_inches || null,
     priceCents, validCurrency, '/uploads/' + req.file.filename, status
   );
@@ -311,12 +319,13 @@ router.put('/:id', authenticateToken, (req, res) => {
     return res.status(403).json({ error: 'Not authorized' });
   }
 
-  const { title, description, style, medium, price, currency, year_created, width_inches, height_inches, status } = req.body;
+  const { title, description, style, medium, series, price, currency, year_created, width_inches, height_inches, status } = req.body;
 
   const updatedTitle = title || painting.title;
   const updatedDesc = description !== undefined ? description : painting.description;
   const updatedStyle = style !== undefined ? style : painting.style;
   const updatedMedium = medium !== undefined ? medium : painting.medium;
+  const updatedSeries = series !== undefined ? ((series && series.trim()) ? series.trim() : null) : painting.series;
   const updatedYear = year_created !== undefined ? year_created : painting.year_created;
   const updatedWidth = width_inches !== undefined && width_inches !== null ? width_inches : painting.width_inches;
   const updatedHeight = height_inches !== undefined && height_inches !== null ? height_inches : painting.height_inches;
@@ -326,12 +335,12 @@ router.put('/:id', authenticateToken, (req, res) => {
 
   db.prepare(
     `UPDATE paintings SET
-      title = ?, description = ?, style = ?, medium = ?,
+      title = ?, description = ?, style = ?, medium = ?, series = ?,
       year_created = ?, width_inches = ?, height_inches = ?,
       price_cents = ?, currency = ?, status = ?,
       updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`
-  ).run(updatedTitle, updatedDesc || null, updatedStyle || null, updatedMedium || null,
+  ).run(updatedTitle, updatedDesc || null, updatedStyle || null, updatedMedium || null, updatedSeries,
     updatedYear || null, updatedWidth || null, updatedHeight || null,
     updatedPrice, updatedCurrency, updatedStatus, req.params.id);
 

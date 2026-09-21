@@ -22,6 +22,7 @@ const migrations = [
   `ALTER TABLE paintings ADD COLUMN currency TEXT NOT NULL DEFAULT 'USD' CHECK(currency IN ('USD', 'EUR', 'GBP'))`,
   `ALTER TABLE users ADD COLUMN reminder_sent INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE users ADD COLUMN instagram_url TEXT`,
+  `ALTER TABLE paintings ADD COLUMN series TEXT`,
 ];
 
 // Table migrations — create tables that may not exist in older databases

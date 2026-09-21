@@ -58,6 +58,12 @@
         <input type="text" name="style" placeholder="e.g. Impressionism, Abstract">
       </div>
       <div class="form-group">
+        <label>Series / Collection</label>
+        <input type="text" name="series" list="seriesList" placeholder="e.g. Gold and Black Series">
+        <datalist id="seriesList"></datalist>
+        <p style="font-size:.78rem;color:var(--muted);margin-top:.3rem;">Group related paintings under a named collection. They'll appear together in the Gallery.</p>
+      </div>
+      <div class="form-group">
         <label>Medium</label>
         <input type="text" name="medium" placeholder="e.g. Oil on canvas">
       </div>
@@ -109,6 +115,17 @@
       if (!user || (user.role !== 'artist' && user.role !== 'admin')) {
         window.location.href = '/login.html';
       }
+
+      // Suggest existing series/collections for consistent naming
+      try {
+        const data = await api('/paintings/meta/series');
+        const dl = document.getElementById('seriesList');
+        (data.series || []).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          dl.appendChild(opt);
+        });
+      } catch {}
     });
 
     // Currency toggle
