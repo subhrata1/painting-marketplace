@@ -236,6 +236,38 @@
       font-size: 10px; color: rgba(201,169,110,.6); letter-spacing: .5px;
       font-family: Georgia, 'Times New Roman', serif;
     }
+
+    /* --- Series drag-and-drop board --- */
+    .series-board-help { color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+    .series-add { display: flex; gap: .5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .series-add input { max-width: 280px; }
+    .series-lanes { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 1rem; align-items: flex-start; }
+    .lane {
+      flex: 0 0 260px; background: rgba(255,255,255,.03);
+      border: 1px solid var(--border); border-radius: 10px; padding: .75rem;
+      transition: border-color .15s, background .15s;
+    }
+    .lane.unassigned { background: rgba(255,255,255,.015); border-style: dashed; }
+    .lane.drag-over { border-color: var(--accent); background: rgba(201,169,110,.1); }
+    .lane-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: .5rem; margin-bottom: .75rem; padding-bottom: .5rem;
+      border-bottom: 1px solid rgba(201,169,110,.2);
+    }
+    .lane-title { font-size: .92rem; color: var(--accent); font-weight: 500; word-break: break-word; }
+    .lane-count { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+    .lane-drop { min-height: 70px; display: flex; flex-direction: column; gap: .5rem; }
+    .lane-empty { color: var(--muted); font-size: .78rem; font-style: italic; text-align: center; padding: 1rem .5rem; }
+    .lane-card {
+      display: flex; align-items: center; gap: .6rem; padding: .4rem;
+      background: var(--surface-2, rgba(255,255,255,.05)); border: 1px solid var(--border);
+      border-radius: 8px; cursor: grab; user-select: none;
+    }
+    .lane-card:active { cursor: grabbing; }
+    .lane-card.dragging { opacity: .4; }
+    .lane-card img { width: 42px; height: 52px; object-fit: cover; border-radius: 4px; flex-shrink: 0; pointer-events: none; }
+    .lane-card .lc-title { font-size: .8rem; line-height: 1.2; }
+    .lane-card .lc-sold { font-size: .66rem; color: var(--danger); font-weight: 700; letter-spacing: .04em; }
   </style>
 </head>
 <body>
@@ -257,6 +289,11 @@
     let newThisWeek = [];
     let currentSpotlight = null;
     let activeTab = 'spotlight';
+
+    // Series board state
+    let extraLanes = [];   // series names created in the UI but not yet on any painting
+    let laneList = [];      // rendered lane order: index 0 = null (Unassigned), then series names
+    let draggedId = null;   // painting id currently being dragged
 
     async function load() {
       const user = await loadUser();
@@ -316,6 +353,7 @@
           <button class="tab ${activeTab === 'newthisweek' ? 'active' : ''}" onclick="switchTab('newthisweek')">New This Week</button>
           <button class="tab ${activeTab === 'artists' ? 'active' : ''}" onclick="switchTab('artists')">Artists</button>
           <button class="tab ${activeTab === 'paintings' ? 'active' : ''}" onclick="switchTab('paintings')">All Paintings</button>
+          <button class="tab ${activeTab === 'series' ? 'active' : ''}" onclick="switchTab('series')">Series Board</button>
           <button class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="switchTab('users')">All Users</button>
         </div>
 
@@ -608,6 +646,49 @@
         </div>`;
       }
 
+      if (activeTab === 'series') {
+        // Collect series present on paintings, plus any empty lanes created in the UI
+        const present = [];
+        allPaintings.forEach(p => {
+          const s = (p.series && p.series.trim()) ? p.series.trim() : null;
+          if (s && !present.includes(s)) present.push(s);
+        });
+        extraLanes.forEach(s => { if (s && !present.includes(s)) present.push(s); });
+        present.sort((a, b) => a.localeCompare(b));
+
+        // laneList[0] = null (Unassigned); rest are series names. Drop handler maps by index.
+        laneList = [null, ...present];
+
+        const laneCard = p => {
+          const isSold = p.status === 'sold';
+          return `<div class="lane-card" draggable="true" data-id="${p.id}">
+            <img src="${p.image_path}" alt="${esc(p.title)}">
+            <div><div class="lc-title">${esc(p.title)}</div>${isSold ? '<div class="lc-sold">SOLD</div>' : ''}</div>
+          </div>`;
+        };
+        const laneHtml = (idx) => {
+          const series = laneList[idx];
+          const items = allPaintings.filter(p => {
+            const s = (p.series && p.series.trim()) ? p.series.trim() : null;
+            return series === null ? !s : s === series;
+          });
+          const body = items.length ? items.map(laneCard).join('') : '<div class="lane-empty">Drop paintings here</div>';
+          return `<div class="lane ${series === null ? 'unassigned' : ''}" data-lane="${idx}">
+            <div class="lane-head"><span class="lane-title">${series === null ? 'Unassigned' : esc(series)}</span><span class="lane-count">${items.length}</span></div>
+            <div class="lane-drop">${body}</div>
+          </div>`;
+        };
+
+        let html = '<p class="series-board-help">Drag a painting card into a series to group it. Drop it in <strong>Unassigned</strong> to remove it from any series. Every change saves instantly.</p>';
+        html += '<div class="series-add"><input type="text" id="newSeriesName" placeholder="New series name, e.g. Gold and Black Series" onkeydown="if(event.key===\'Enter\')addSeriesLane()"><button class="btn btn-primary btn-sm" onclick="addSeriesLane()">Add Series</button></div>';
+        html += '<div class="series-lanes">';
+        html += laneList.map((_, i) => laneHtml(i)).join('');
+        html += '</div>';
+        el.innerHTML = html;
+        wireSeriesBoard();
+        return;
+      }
+
       if (activeTab === 'users') {
         el.innerHTML = allUsers.map(u => `
           <div class="user-row">
@@ -618,6 +699,66 @@
             ${u.role !== 'admin' ? `<button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${esc(u.name).replace(/'/g,"\\'")}')">Delete</button>` : ''}
           </div>
         `).join('');
+      }
+    }
+
+    // --- Series board drag-and-drop ---
+    function addSeriesLane() {
+      const input = document.getElementById('newSeriesName');
+      if (!input) return;
+      const name = input.value.trim();
+      if (!name) return;
+      const exists = allPaintings.some(p => (p.series || '').trim() === name) || extraLanes.includes(name);
+      if (!exists) extraLanes.push(name);
+      input.value = '';
+      renderTab();
+    }
+
+    function wireSeriesBoard() {
+      const cards = document.querySelectorAll('.lane-card');
+      cards.forEach(card => {
+        card.addEventListener('dragstart', e => {
+          draggedId = Number(card.dataset.id);
+          card.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          try { e.dataTransfer.setData('text/plain', String(draggedId)); } catch {}
+        });
+        card.addEventListener('dragend', () => {
+          draggedId = null;
+          card.classList.remove('dragging');
+        });
+      });
+
+      const lanes = document.querySelectorAll('.lane');
+      lanes.forEach(lane => {
+        lane.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; lane.classList.add('drag-over'); });
+        lane.addEventListener('dragleave', () => lane.classList.remove('drag-over'));
+        lane.addEventListener('drop', e => {
+          e.preventDefault();
+          lane.classList.remove('drag-over');
+          const id = draggedId != null ? draggedId : Number(e.dataTransfer.getData('text/plain'));
+          const targetSeries = laneList[Number(lane.dataset.lane)]; // null = Unassigned
+          saveSeries(id, targetSeries);
+        });
+      });
+    }
+
+    async function saveSeries(id, series) {
+      const painting = allPaintings.find(p => p.id === id);
+      if (!painting) return;
+      const current = (painting.series && painting.series.trim()) ? painting.series.trim() : null;
+      const target = series || null;
+      if (current === target) return; // no change (e.g. dropped in same lane)
+
+      const prev = painting.series;
+      painting.series = target; // optimistic update
+      renderTab();
+      try {
+        await api('/paintings/' + id, { method: 'PUT', body: JSON.stringify({ series: target || '' }) });
+      } catch (err) {
+        painting.series = prev; // roll back on failure
+        renderTab();
+        alert('Could not move painting: ' + err.message);
       }
     }
 
