@@ -23,5 +23,23 @@
   </div>
 
   <script src="/js/app.js"></script>
+  <script>
+    // Fire the Meta Pixel Purchase conversion. Value + currency are passed from
+    // the Stripe success_url so Meta can optimise/report on real order value.
+    (function () {
+      var qp = new URLSearchParams(location.search);
+      var value = parseFloat(qp.get('value'));
+      var currency = qp.get('currency') || 'USD';
+      function firePurchase() {
+        if (!window.fbq) return;
+        var payload = { currency: currency };
+        if (!isNaN(value)) payload.value = value;
+        fbq('track', 'Purchase', payload);
+      }
+      // app.js defines fbq synchronously, but guard in case it's still loading.
+      if (window.fbq) firePurchase();
+      else window.addEventListener('load', firePurchase);
+    })();
+  </script>
 </body>
 </html>

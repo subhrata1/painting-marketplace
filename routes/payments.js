@@ -82,7 +82,7 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
         buyer_id: req.user.id.toString(),
         artist_id: painting.artist_id.toString(),
       },
-      success_url: `${process.env.DOMAIN}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.DOMAIN}/order-success.html?session_id={CHECKOUT_SESSION_ID}&value=${(unitAmount / 100).toFixed(2)}&currency=${(painting.currency || 'USD')}`,
       cancel_url: `${process.env.DOMAIN}/painting.html?id=${painting.id}`,
     };
 

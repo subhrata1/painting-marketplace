@@ -137,6 +137,16 @@
       try {
         const data = await api('/paintings/' + id);
         paintingData = data.painting;
+        // Meta Pixel: track the product view for retargeting + optimisation.
+        if (window.fbq && paintingData) {
+          fbq('track', 'ViewContent', {
+            content_ids: [String(paintingData.id)],
+            content_name: paintingData.title,
+            content_type: 'product',
+            value: paintingData.price_cents / 100,
+            currency: paintingData.currency || 'USD',
+          });
+        }
         try { allSeries = (await api('/paintings/meta/series')).series || []; } catch { allSeries = []; }
         renderView();
       } catch (err) {
