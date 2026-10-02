@@ -248,6 +248,11 @@
             <input type="text" id="editStyle" value="${esc(p.style || '')}" placeholder="e.g. Impressionism">
           </div>
           <div class="form-group">
+            <label>Discount %</label>
+            <input type="number" min="0" max="90" id="editDiscount" value="${p.discount_percent || 0}" placeholder="0">
+            <p style="font-size:.78rem;color:var(--muted);margin-top:.3rem;">Set a % off this piece (0 = none). Buyers get it automatically at checkout.</p>
+          </div>
+          <div class="form-group">
             <label>Series / Collection</label>
             <select id="editSeriesSelect">
               <option value="">— None —</option>
@@ -385,6 +390,7 @@
           status: document.getElementById('editStatus').value,
           style: document.getElementById('editStyle').value.trim(),
           series: (function(){ var sel = document.getElementById('editSeriesSelect').value; return sel === '__new__' ? document.getElementById('editSeriesNew').value.trim() : sel; })(),
+          discount_percent: Math.max(0, Math.min(90, parseInt(document.getElementById('editDiscount').value, 10) || 0)),
           medium: document.getElementById('editMedium').value.trim(),
           width_inches: widthVal || null,
           height_inches: heightVal || null,
