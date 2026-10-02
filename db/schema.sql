@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS paintings (
   medium TEXT,
   series TEXT,
   discount_percent INTEGER NOT NULL DEFAULT 0,
+  gallery_only INTEGER NOT NULL DEFAULT 0,
   year_created TEXT,
   width_inches REAL,
   height_inches REAL,

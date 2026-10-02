@@ -52,6 +52,7 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
 
     if (!painting) return res.status(404).json({ error: 'Painting not found' });
     if (painting.status !== 'available') return res.status(400).json({ error: 'Painting is no longer available' });
+    if (painting.gallery_only) return res.status(400).json({ error: 'This painting is not available for purchase online — it can be viewed and bought at the gallery.' });
     if (painting.artist_id === req.user.id) return res.status(400).json({ error: 'You cannot buy your own painting' });
 
     // Auto-apply a per-painting discount (set in the admin panel). The buyer

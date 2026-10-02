@@ -101,6 +101,7 @@ function paintingCard(p) {
       <div class="card-img-wrap">
         <img src="${p.image_path}" alt="${p.title}" loading="lazy">
         ${isSold ? '<div class="sold-badge">SOLD</div>' : ''}
+        ${!isSold && p.gallery_only ? '<div style="position:absolute;top:10px;left:10px;background:rgba(201,169,110,.95);color:#1a1a1a;font-size:.62rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:.3rem .6rem;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.3)">Gallery Only</div>' : ''}
       </div>
       <div class="card-body">
         <div class="card-title">${esc(p.title)}</div>
@@ -110,7 +111,9 @@ function paintingCard(p) {
           ${p.style ? `<span>${esc(p.style)}</span>` : ''}
           ${p.medium ? `<span>${esc(p.medium)}</span>` : ''}
         </div>
-        ${!isSold ? `<button class="btn btn-primary btn-sm card-buy-btn" onclick="event.stopPropagation();buyPainting(${p.id})">Buy Now</button>` : ''}
+        ${isSold ? '' : (p.gallery_only
+          ? '<div class="card-gallery-note" style="font-size:.72rem;color:var(--accent);margin-top:.5rem;font-style:italic">Available at the gallery</div>'
+          : `<button class="btn btn-primary btn-sm card-buy-btn" onclick="event.stopPropagation();buyPainting(${p.id})">Buy Now</button>`)}
       </div>
     </div>`;
 }

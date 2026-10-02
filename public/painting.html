@@ -161,10 +161,11 @@
       const isMine = currentUser && currentUser.id === p.artist_id;
       const isAdmin = currentUser && currentUser.role === 'admin';
       const canEdit = isMine || isAdmin;
-      const canBuy = currentUser && !isMine && p.status === 'available';
+      const canBuy = currentUser && !isMine && p.status === 'available' && !p.gallery_only;
+      const galleryOnly = p.status === 'available' && p.gallery_only;
 
       detail.innerHTML = `
-        <div><img src="${p.image_path}" alt="${esc(p.title)}"></div>
+        <div style="position:relative"><img src="${p.image_path}" alt="${esc(p.title)}">${galleryOnly ? '<div style="position:absolute;top:14px;left:14px;background:rgba(201,169,110,.95);color:#1a1a1a;font-size:.72rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:.4rem .8rem;border-radius:5px;box-shadow:0 2px 10px rgba(0,0,0,.35)">Gallery Only</div>' : ''}</div>
         <div class="painting-info">
           <h1>${esc(p.title)}</h1>
           <div class="artist">by <a href="/artist.html?id=${p.artist_id}" style="color:var(--accent);text-decoration:none">${esc(p.artist_name)}</a></div>
@@ -182,7 +183,8 @@
           </div>
           ${p.description ? '<div class="description">' + esc(p.description) + '</div>' : ''}
           ${canBuy ? '<button class="btn btn-primary" id="buyBtn">Purchase This Painting</button><p style="font-size:.78rem;color:var(--muted);margin-top:.75rem">Shipping is handled directly by the artist. See <a href="/terms.html">Terms</a>.</p>' : ''}
-          ${!currentUser && p.status === 'available' ? '<p style="margin-top:1rem"><a href="/register.html?role=buyer" class="btn btn-primary">Sign Up to Purchase</a><span style="font-size:.82rem;color:var(--muted);margin-left:.75rem">or <a href="/login.html" style="color:var(--accent)">Log in</a></span></p>' : ''}
+          ${galleryOnly ? '<div style="margin-top:1rem;padding:1rem 1.25rem;border:1px solid var(--accent);border-radius:8px;background:rgba(201,169,110,.08)"><div style="color:var(--accent);font-weight:600;margin-bottom:.3rem">Not available for online purchase</div><div style="font-size:.85rem;color:var(--muted)">This piece is available to view and buy at the gallery. Please <a href="/join.html" style="color:var(--accent)">get in touch</a> for details.</div></div>' : ''}
+          ${!currentUser && p.status === 'available' && !p.gallery_only ? '<p style="margin-top:1rem"><a href="/register.html?role=buyer" class="btn btn-primary">Sign Up to Purchase</a><span style="font-size:.82rem;color:var(--muted);margin-left:.75rem">or <a href="/login.html" style="color:var(--accent)">Log in</a></span></p>' : ''}
           <div class="reactions" id="reactionsContainer"></div>
           ${canEdit ? '<div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;"><button class="btn btn-primary" id="editBtn">Edit Painting</button>' + (isMine ? '<a href="/dashboard.html" class="btn">Dashboard</a>' : '') + '<button class="btn btn-danger" id="deleteBtn">Delete' + (!isMine ? ' (Admin)' : '') + '</button></div>' : ''}
         </div>`;
@@ -252,6 +254,13 @@
               <button type="button" class="currency-btn ${st === 'sold' ? 'active' : ''}" data-listing="sold">Sold</button>
             </div>
             <input type="hidden" id="editStatus" value="${st}">
+          </div>
+          <div class="form-group">
+            <label style="display:flex;align-items:center;gap:.6rem;cursor:pointer;">
+              <input type="checkbox" id="editGalleryOnly" ${p.gallery_only ? 'checked' : ''} style="width:auto;margin:0;">
+              <span>Gallery only — not for sale on the website</span>
+            </label>
+            <p style="font-size:.78rem;color:var(--muted);margin-top:.3rem;">When ticked, the painting still appears in the gallery but the Buy button is replaced with a "view at the gallery" note, and online checkout is blocked.</p>
           </div>
           <div class="form-group">
             <label>Style</label>
@@ -401,6 +410,7 @@
           style: document.getElementById('editStyle').value.trim(),
           series: (function(){ var sel = document.getElementById('editSeriesSelect').value; return sel === '__new__' ? document.getElementById('editSeriesNew').value.trim() : sel; })(),
           discount_percent: Math.max(0, Math.min(90, parseInt(document.getElementById('editDiscount').value, 10) || 0)),
+          gallery_only: document.getElementById('editGalleryOnly').checked ? 1 : 0,
           medium: document.getElementById('editMedium').value.trim(),
           width_inches: widthVal || null,
           height_inches: heightVal || null,

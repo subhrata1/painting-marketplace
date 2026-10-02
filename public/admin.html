@@ -641,6 +641,7 @@
                     <span>${p.status}</span>
                     ${p.style ? `<span>${esc(p.style)}</span>` : ''}
                     ${p.discount_percent ? `<span style="color:var(--accent);font-weight:600">${p.discount_percent}% OFF</span>` : ''}
+                    ${p.gallery_only ? `<span style="color:var(--accent);font-weight:600">GALLERY ONLY</span>` : ''}
                   </div>
                 </div>
               </div>
@@ -650,6 +651,7 @@
                   <span style="font-size:.78rem;color:var(--muted)">% off</span>
                   <button class="btn btn-sm" style="flex:1;justify-content:center" onclick="event.stopPropagation();setDiscount(${p.id})">Set discount</button>
                 </div>
+                <button class="btn btn-sm" style="width:100%;justify-content:center;margin-bottom:.5rem" onclick="event.stopPropagation();toggleGalleryOnly(${p.id})">${p.gallery_only ? 'Enable online sale' : 'Mark gallery only (no online sale)'}</button>
                 <button class="btn btn-danger btn-sm" style="width:100%;justify-content:center" onclick="deletePainting(${p.id},'${esc(p.title).replace(/'/g,"\\'")}')">Remove Painting</button>
               </div>
             </div>
@@ -812,6 +814,22 @@
         renderTab();
       } catch (err) {
         alert('Failed to set discount: ' + err.message);
+      }
+    }
+
+    async function toggleGalleryOnly(id) {
+      const p = allPaintings.find(x => x.id === id);
+      if (!p) return;
+      const next = p.gallery_only ? 0 : 1;
+      try {
+        await api('/paintings/' + id, { method: 'PUT', body: JSON.stringify({ gallery_only: next }) });
+        p.gallery_only = next;
+        alert(next
+          ? 'Marked as gallery only — the Buy button is now replaced with a "view at the gallery" note and online checkout is blocked.'
+          : 'Online sale re-enabled — this painting can be bought on the website again.');
+        renderTab();
+      } catch (err) {
+        alert('Failed to update: ' + err.message);
       }
     }
 

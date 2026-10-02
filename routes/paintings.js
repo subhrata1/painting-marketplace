@@ -319,7 +319,7 @@ router.put('/:id', authenticateToken, (req, res) => {
     return res.status(403).json({ error: 'Not authorized' });
   }
 
-  const { title, description, style, medium, series, price, currency, year_created, width_inches, height_inches, status, discount_percent } = req.body;
+  const { title, description, style, medium, series, price, currency, year_created, width_inches, height_inches, status, discount_percent, gallery_only } = req.body;
 
   const updatedTitle = title || painting.title;
   const updatedDesc = description !== undefined ? description : painting.description;
@@ -335,17 +335,20 @@ router.put('/:id', authenticateToken, (req, res) => {
   const updatedDiscount = discount_percent !== undefined
     ? Math.max(0, Math.min(90, parseInt(discount_percent, 10) || 0))
     : painting.discount_percent;
+  const updatedGalleryOnly = gallery_only !== undefined
+    ? (gallery_only ? 1 : 0)
+    : painting.gallery_only;
 
   db.prepare(
     `UPDATE paintings SET
       title = ?, description = ?, style = ?, medium = ?, series = ?,
       year_created = ?, width_inches = ?, height_inches = ?,
-      price_cents = ?, currency = ?, status = ?, discount_percent = ?,
+      price_cents = ?, currency = ?, status = ?, discount_percent = ?, gallery_only = ?,
       updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`
   ).run(updatedTitle, updatedDesc || null, updatedStyle || null, updatedMedium || null, updatedSeries,
     updatedYear || null, updatedWidth || null, updatedHeight || null,
-    updatedPrice, updatedCurrency, updatedStatus, updatedDiscount, req.params.id);
+    updatedPrice, updatedCurrency, updatedStatus, updatedDiscount, updatedGalleryOnly, req.params.id);
 
   res.json({ ok: true });
 });
