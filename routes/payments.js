@@ -116,15 +116,27 @@ router.handleWebhook = async (req, res) => {
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const { painting_id, buyer_id, artist_id } = session.metadata;
+    const evtSession = event.data.object;
+
+    // Retrieve the FULL session from Stripe — the webhook event payload can omit
+    // nested objects (shipping/customer details) depending on API version, which
+    // is why addresses came back empty. Retrieving guarantees current fields.
+    let session = evtSession;
+    try {
+      session = await stripe.checkout.sessions.retrieve(evtSession.id, {
+        expand: ['customer_details'],
+      });
+    } catch (e) {
+      console.error('Session retrieve failed, falling back to event payload:', e.message);
+    }
+
+    const { painting_id, buyer_id, artist_id } = session.metadata || evtSession.metadata;
     const totalCents = session.amount_total;
     const platformFee = Math.round(totalCents * PLATFORM_FEE / 100);
     const artistPayout = totalCents - platformFee;
 
-    // Capture shipping robustly across Stripe API versions: older sessions expose
-    // shipping_details; newer ones put it under collected_information; fall back to
-    // customer_details. This ensures the artist always gets a shippable address.
+    // Shipping can live in shipping_details (older) or collected_information
+    // (newer); fall back to customer_details. Ensures a shippable address.
     const shipping = session.shipping_details
       || (session.collected_information && session.collected_information.shipping_details)
       || null;
