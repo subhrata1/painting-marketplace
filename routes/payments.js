@@ -54,7 +54,11 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
     if (painting.status !== 'available') return res.status(400).json({ error: 'Painting is no longer available' });
     if (painting.artist_id === req.user.id) return res.status(400).json({ error: 'You cannot buy your own painting' });
 
-    const platformFee = Math.round(painting.price_cents * PLATFORM_FEE / 100);
+    // Auto-apply a per-painting discount (set in the admin panel). The buyer
+    // simply sees the reduced price at checkout — no code to enter.
+    const discountPct = Math.max(0, Math.min(90, painting.discount_percent || 0));
+    const unitAmount = Math.round(painting.price_cents * (100 - discountPct) / 100);
+    const platformFee = Math.round(unitAmount * PLATFORM_FEE / 100);
 
     const sessionParams = {
       mode: 'payment',
@@ -66,7 +70,7 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
             description: `By ${painting.artist_name}`,
             images: painting.image_path ? [`${process.env.DOMAIN}${painting.image_path}`] : [],
           },
-          unit_amount: painting.price_cents,
+          unit_amount: unitAmount,
         },
         quantity: 1,
       }],

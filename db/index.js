@@ -23,6 +23,7 @@ const migrations = [
   `ALTER TABLE users ADD COLUMN reminder_sent INTEGER NOT NULL DEFAULT 0`,
   `ALTER TABLE users ADD COLUMN instagram_url TEXT`,
   `ALTER TABLE paintings ADD COLUMN series TEXT`,
+  `ALTER TABLE paintings ADD COLUMN discount_percent INTEGER NOT NULL DEFAULT 0`,
 ];
 
 // Table migrations — create tables that may not exist in older databases

@@ -158,7 +158,11 @@
         <div class="painting-info">
           <h1>${esc(p.title)}</h1>
           <div class="artist">by <a href="/artist.html?id=${p.artist_id}" style="color:var(--accent);text-decoration:none">${esc(p.artist_name)}</a></div>
-          <div class="price">${p.status === 'sold' ? '<span style="color:var(--danger)">SOLD</span>' : formatPrice(p.price_cents, p.currency)}</div>
+          <div class="price">${p.status === 'sold'
+            ? '<span style="color:var(--danger)">SOLD</span>'
+            : (p.discount_percent > 0
+              ? `<span style="color:var(--accent)">${formatPrice(Math.round(p.price_cents * (100 - p.discount_percent) / 100), p.currency)}</span> <span style="text-decoration:line-through;color:var(--muted);font-size:.7em">${formatPrice(p.price_cents, p.currency)}</span> <span style="font-size:.6em;color:var(--accent)">${p.discount_percent}% OFF</span>`
+              : formatPrice(p.price_cents, p.currency))}</div>
           <div class="details">
             ${p.style ? '<div>Style: ' + esc(p.style) + '</div>' : ''}
             ${p.series ? '<div>Series: <a href="/gallery.html?series=' + encodeURIComponent(p.series) + '" style="color:var(--accent);text-decoration:none">' + esc(p.series) + '</a></div>' : ''}

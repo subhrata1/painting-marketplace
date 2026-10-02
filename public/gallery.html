@@ -278,8 +278,12 @@
 
     // Single painting card
     function cardHtml(p) {
-      const price = formatPrice(p.price_cents, p.currency);
       const isSold = p.status === 'sold';
+      const hasDisc = !isSold && p.discount_percent > 0;
+      const discCents = Math.round(p.price_cents * (100 - p.discount_percent) / 100);
+      const price = hasDisc
+        ? `<span style="color:var(--accent);font-weight:700">${formatPrice(discCents, p.currency)}</span> <span style="text-decoration:line-through;color:var(--muted);font-size:.82em">${formatPrice(p.price_cents, p.currency)}</span> <span style="color:var(--accent);font-size:.7em;font-weight:700">${p.discount_percent}% OFF</span>`
+        : formatPrice(p.price_cents, p.currency);
       return `
         <div class="gallery-item" onclick="location.href='/painting.html?id=${p.id}'">
           <div ${isSold ? 'class="gallery-item-sold-overlay"' : ''}>

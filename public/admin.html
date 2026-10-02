@@ -640,10 +640,16 @@
                   <div class="card-meta">
                     <span>${p.status}</span>
                     ${p.style ? `<span>${esc(p.style)}</span>` : ''}
+                    ${p.discount_percent ? `<span style="color:var(--accent);font-weight:600">${p.discount_percent}% OFF</span>` : ''}
                   </div>
                 </div>
               </div>
               <div style="padding:0 1rem 1rem;">
+                <div style="display:flex;gap:.4rem;align-items:center;margin-bottom:.5rem;">
+                  <input type="number" min="0" max="90" value="${p.discount_percent || 0}" id="disc-${p.id}" style="width:64px" title="Discount %" onclick="event.stopPropagation()">
+                  <span style="font-size:.78rem;color:var(--muted)">% off</span>
+                  <button class="btn btn-sm" style="flex:1;justify-content:center" onclick="event.stopPropagation();setDiscount(${p.id})">Set discount</button>
+                </div>
                 <button class="btn btn-danger btn-sm" style="width:100%;justify-content:center" onclick="deletePainting(${p.id},'${esc(p.title).replace(/'/g,"\\'")}')">Remove Painting</button>
               </div>
             </div>
@@ -792,6 +798,20 @@
         painting.series = prev; // roll back on failure
         renderTab();
         alert('Could not move painting: ' + err.message);
+      }
+    }
+
+    async function setDiscount(id) {
+      const el = document.getElementById('disc-' + id);
+      const pct = Math.max(0, Math.min(90, parseInt(el.value, 10) || 0));
+      try {
+        await api('/paintings/' + id, { method: 'PUT', body: JSON.stringify({ discount_percent: pct }) });
+        const p = allPaintings.find(x => x.id === id);
+        if (p) p.discount_percent = pct;
+        alert(pct ? (pct + '% discount applied — buyers get it automatically at checkout.') : 'Discount removed.');
+        renderTab();
+      } catch (err) {
+        alert('Failed to set discount: ' + err.message);
       }
     }
 
