@@ -147,8 +147,19 @@
               <img src="${o.image_path}" alt="">
               <div class="order-info">
                 <div class="title">${esc(o.title)}</div>
-                <div class="meta">Buyer: ${esc(o.buyer_name)} &middot; Payout: ${formatPrice(o.artist_payout_cents)}</div>
-                ${o.shipping_name ? `<div class="meta">Ship to: ${esc(o.shipping_name)}, ${esc(o.shipping_city || '')}, ${esc(o.shipping_state || '')} ${esc(o.shipping_zip || '')}</div>` : ''}
+                <div class="meta">Buyer: ${esc(o.buyer_name)}${o.buyer_email ? ` &middot; ${esc(o.buyer_email)}` : ''}</div>
+                <div class="meta">Sale: ${formatPrice(o.total_cents)} &middot; Your payout: ${formatPrice(o.artist_payout_cents)}</div>
+                <div class="meta">Ordered: ${new Date(o.created_at).toLocaleDateString()}</div>
+                ${(o.shipping_name || o.shipping_address) ? `
+                  <div class="meta" style="margin-top:.4rem;line-height:1.5;">
+                    <strong>Ship to:</strong><br>
+                    ${o.shipping_name ? esc(o.shipping_name) + '<br>' : ''}
+                    ${o.shipping_address ? esc(o.shipping_address) + '<br>' : ''}
+                    ${[esc(o.shipping_city || ''), esc(o.shipping_state || ''), esc(o.shipping_zip || '')].filter(Boolean).join(' ')}<br>
+                    ${esc(o.shipping_country || '')}
+                  </div>`
+                : '<div class="meta" style="color:var(--danger)">⚠ No shipping address on file — check Stripe → Payments.</div>'}
+                ${o.tracking_number ? `<div class="meta">Tracking: ${esc(o.tracking_number)}</div>` : ''}
               </div>
               <span class="order-status status-${o.status}">${o.status}</span>
               ${o.status === 'paid' ? `<button class="btn btn-sm" onclick="event.stopPropagation();markShipped(${o.id})">Mark Shipped</button>` : ''}

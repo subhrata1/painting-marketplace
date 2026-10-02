@@ -122,7 +122,16 @@ router.handleWebhook = async (req, res) => {
     const platformFee = Math.round(totalCents * PLATFORM_FEE / 100);
     const artistPayout = totalCents - platformFee;
 
-    const shipping = session.shipping_details;
+    // Capture shipping robustly across Stripe API versions: older sessions expose
+    // shipping_details; newer ones put it under collected_information; fall back to
+    // customer_details. This ensures the artist always gets a shippable address.
+    const shipping = session.shipping_details
+      || (session.collected_information && session.collected_information.shipping_details)
+      || null;
+    const cust = session.customer_details || {};
+    const addr = (shipping && shipping.address) || cust.address || {};
+    const shipName = (shipping && shipping.name) || cust.name || null;
+    const street = [addr.line1, addr.line2].filter(Boolean).join(', ') || null;
 
     db.prepare(
       `INSERT INTO orders (painting_id, buyer_id, artist_id, total_cents, platform_fee_cents, artist_payout_cents, stripe_payment_intent, status, shipping_name, shipping_address, shipping_city, shipping_state, shipping_zip, shipping_country)
@@ -130,12 +139,12 @@ router.handleWebhook = async (req, res) => {
     ).run(
       painting_id, buyer_id, artist_id, totalCents, platformFee, artistPayout,
       session.payment_intent,
-      shipping?.name || null,
-      shipping?.address?.line1 || null,
-      shipping?.address?.city || null,
-      shipping?.address?.state || null,
-      shipping?.address?.postal_code || null,
-      shipping?.address?.country || null
+      shipName,
+      street,
+      addr.city || null,
+      addr.state || null,
+      addr.postal_code || null,
+      addr.country || null
     );
 
     db.prepare("UPDATE paintings SET status = 'sold', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(painting_id);
@@ -164,7 +173,7 @@ router.get('/orders/mine', authenticateToken, (req, res) => {
 // Get my sales (artist)
 router.get('/orders/sales', authenticateToken, requireRole('artist', 'admin'), (req, res) => {
   const orders = db.prepare(
-    `SELECT o.*, p.title, p.image_path, u.name as buyer_name
+    `SELECT o.*, p.title, p.image_path, u.name as buyer_name, u.email as buyer_email
      FROM orders o JOIN paintings p ON o.painting_id = p.id JOIN users u ON o.buyer_id = u.id
      WHERE o.artist_id = ? ORDER BY o.created_at DESC`
   ).all(req.user.id);
