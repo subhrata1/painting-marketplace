@@ -54,13 +54,9 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
     if (painting.status !== 'available') return res.status(400).json({ error: 'Painting is no longer available' });
     if (painting.artist_id === req.user.id) return res.status(400).json({ error: 'You cannot buy your own painting' });
 
-    if (!painting.stripe_account_id) {
-      return res.status(400).json({ error: 'Artist has not set up payment receiving yet' });
-    }
-
     const platformFee = Math.round(painting.price_cents * PLATFORM_FEE / 100);
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode: 'payment',
       line_items: [{
         price_data: {
@@ -74,11 +70,9 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
         },
         quantity: 1,
       }],
-      payment_intent_data: {
-        application_fee_amount: platformFee,
-        transfer_data: { destination: painting.stripe_account_id },
+      shipping_address_collection: {
+        allowed_countries: ['IE', 'GB', 'US', 'CA', 'AU', 'NZ', 'DE', 'FR', 'ES', 'IT', 'NL', 'BE', 'SE', 'DK', 'FI', 'NO', 'AT', 'PT'],
       },
-      shipping_address_collection: { allowed_countries: ['US', 'CA', 'GB', 'AU'] },
       metadata: {
         painting_id: painting.id.toString(),
         buyer_id: req.user.id.toString(),
@@ -86,7 +80,20 @@ router.post('/checkout/:paintingId', authenticateToken, async (req, res) => {
       },
       success_url: `${process.env.DOMAIN}/order-success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.DOMAIN}/painting.html?id=${painting.id}`,
-    });
+    };
+
+    // Marketplace 80/20 split — applied ONLY when the artist has connected Stripe
+    // (kept for the multi-artist future). If they haven't onboarded yet, fall back
+    // to a direct full-price charge so the sale still completes and the whole
+    // payment lands in the platform's Stripe balance.
+    if (painting.stripe_account_id) {
+      sessionParams.payment_intent_data = {
+        application_fee_amount: platformFee,
+        transfer_data: { destination: painting.stripe_account_id },
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     res.json({ url: session.url });
   } catch (err) {
