@@ -206,4 +206,14 @@ router.put('/orders/:id/ship', authenticateToken, (req, res) => {
   res.json({ ok: true });
 });
 
+// Admin: clear ALL orders (pre-launch test cleanup) and reset their paintings to available.
+// Intended for wiping test purchases before real sales begin.
+router.delete('/orders/admin/clear-all', authenticateToken, requireRole('admin'), (_req, res) => {
+  const reset = db.prepare(
+    "UPDATE paintings SET status = 'available', updated_at = CURRENT_TIMESTAMP WHERE id IN (SELECT painting_id FROM orders) AND status = 'sold'"
+  ).run();
+  const del = db.prepare('DELETE FROM orders').run();
+  res.json({ ok: true, ordersCleared: del.changes, paintingsReset: reset.changes });
+});
+
 module.exports = router;

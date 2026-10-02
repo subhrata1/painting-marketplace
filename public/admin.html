@@ -362,6 +362,10 @@
           <button class="tab ${activeTab === 'users' ? 'active' : ''}" onclick="switchTab('users')">All Users</button>
         </div>
 
+        <div style="margin:0 0 1rem;text-align:right;">
+          <button class="btn btn-danger btn-sm" onclick="clearTestOrders()" title="Delete all orders and reset their paintings — use before real sales">🧹 Clear test orders</button>
+        </div>
+
         <div id="tabContent"></div>
       `;
 
